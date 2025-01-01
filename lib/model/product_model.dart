@@ -3,13 +3,13 @@ class Product {
   String title;
   String description;
   num price;
-  String image;
+  String thumbnail;
   String category;
 
   Product({
     required this.description,
     required this.id,
-    required this.image,
+    required this.thumbnail,
     required this.price,
     required this.title,
     required this.category,
@@ -19,7 +19,7 @@ class Product {
     return Product(
       description: product["description"] ?? "",
       id: product['id'] ?? 0,
-      image: product['image'] ?? "",
+      thumbnail: product['thumbnail'] ?? "",
       price: product["price"] ?? 0,
       title: product["title"] ?? "",
       category: product["category"] ?? "",

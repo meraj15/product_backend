@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:product_admin/order_items.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -15,7 +16,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   List<dynamic> orders = [];
   List<dynamic> filteredOrders = [];
   String selectedStatus = "All";
-  DateTime selectedDate = DateTime.now(); 
+  DateTime selectedDate = DateTime.now();
 
   @override
   void initState() {
@@ -32,7 +33,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
         final decodeJson = jsonDecode(response.body) as List<dynamic>;
         setState(() {
           orders = decodeJson;
-          filterOrders(); 
+          filterOrders();
         });
       } else {
         debugPrint(
@@ -43,15 +44,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
     }
   }
 
-  
   void filterOrders() {
     setState(() {
       final selectedDateString = DateFormat('yyyy-MM-dd').format(selectedDate);
       filteredOrders = orders.where((order) {
         final orderDate = order['order_date'];
         final isDateMatch = orderDate == selectedDateString;
-        final isStatusMatch = selectedStatus == "All" ||
-            order['order_status'] == selectedStatus;
+        final isStatusMatch =
+            selectedStatus == "All" || order['order_status'] == selectedStatus;
         return isDateMatch && isStatusMatch;
       }).toList();
     });
@@ -61,13 +61,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,
-      firstDate: DateTime(2020), 
+      firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
-        filterOrders(); 
+        filterOrders();
       });
     }
   }
@@ -108,7 +108,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               if (newValue != null) {
                 setState(() {
                   selectedStatus = newValue;
-                  filterOrders(); // Filter orders based on the new status
+                  filterOrders();
                 });
               }
             },
@@ -145,8 +145,34 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               style: const TextStyle(fontSize: 16)),
                           Text("Address: ${order['address']}",
                               style: const TextStyle(fontSize: 16)),
-                          Text("Mobile: ${order['mobile']}",
-                              style: const TextStyle(color: Colors.blue)),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.phone,
+                                color: Colors.blue,
+                              ),
+                              GestureDetector(
+                                onTap: () async {
+                                  final phoneNumber = order['mobile'];
+                                  final Uri url =
+                                      Uri(scheme: 'tel', path: phoneNumber);
+                                  if (await canLaunchUrl(url)) {
+                                    await launchUrl(url);
+                                  } else {
+                                    debugPrint(
+                                        "Cannot launch the phone dialer.");
+                                  }
+                                },
+                                child: Text(
+                                  "${order['mobile']}",
+                                  style: const TextStyle(
+                                    decoration: TextDecoration.underline,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                           Text("Status: ${order['order_status']}",
                               style: const TextStyle(fontSize: 14)),
                           Text("Date: ${order['order_date']}",

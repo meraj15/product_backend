@@ -136,7 +136,7 @@ class _ProductScreenState extends State<ProductScreen> {
               itemBuilder: (context, index) {
                 return Card(
                   child: ListTile(
-                    leading: Image.network(products[index].image),
+                    leading: Image.network(products[index].thumbnail),
                     title: Text(products[index].title),
                     subtitle: Row(
                       children: [
@@ -157,7 +157,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                 products[index].description;
                             productPrice.text =
                                 products[index].price.toString();
-                            productImage.text = products[index].image;
+                            productImage.text = products[index].thumbnail;
                             productCategory.text = products[index].category;
 
                             isUpdate = true;
@@ -185,7 +185,7 @@ class _ProductScreenState extends State<ProductScreen> {
   }
 
   void getData() async {
-    const url = "http://192.168.0.110:3000/api/products";
+    const url = "http://192.168.0.110:3000/api/product";
     final response = await http.get(Uri.parse(url));
     final decodeJson = jsonDecode(response.body) as List<dynamic>;
     setState(() {

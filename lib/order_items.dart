@@ -38,7 +38,11 @@ class _OrderItemsState extends State<OrderItems> {
                 final order = orderedItems[index];
                 return Card(
                   child: ListTile(
-                    leading: Image.network(order.image),
+                    leading: Image.network(
+                      order.thumbnail,
+                      width: 100,
+                      height: 100,
+                    ),
                     title: Text(order.title),
                     subtitle: Row(
                       children: [
@@ -79,6 +83,7 @@ class _OrderItemsState extends State<OrderItems> {
     final url = "http://192.168.0.110:3000/api/orders/status/$orderId";
     final response = await http.get(Uri.parse(url));
     final decodedJson = jsonDecode(response.body);
+    debugPrint("decodedJson : $decodedJson");
     setState(() {
       currentOrderStatus = decodedJson['order_status'] ?? "";
       bottomSheetText =
@@ -104,7 +109,6 @@ class _OrderItemsState extends State<OrderItems> {
     final url = "http://192.168.0.110:3000/api/orders/$orderId";
     final headers = {"Content-Type": "application/json"};
     final body = jsonEncode({"order_status": newStatus});
-
     await http.put(
       Uri.parse(url),
       headers: headers,
@@ -120,6 +124,4 @@ class _OrderItemsState extends State<OrderItems> {
       orderedItems = decodeJson.map((json) => Product.fromJson(json)).toList();
     });
   }
-
-  
 }
