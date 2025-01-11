@@ -5,6 +5,7 @@ class Product {
   num price;
   String thumbnail;
   String category;
+  int stock;
 
   Product({
     required this.description,
@@ -13,6 +14,7 @@ class Product {
     required this.price,
     required this.title,
     required this.category,
+    required this.stock,
   });
 
   factory Product.fromJson(Map product) {
@@ -23,6 +25,7 @@ class Product {
       price: product["price"] ?? 0,
       title: product["title"] ?? "",
       category: product["category"] ?? "",
+      stock: product["stock"] ?? 0,
     );
   }
 }

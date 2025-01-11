@@ -2,12 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:product_admin/model/product_model.dart';
-import 'package:product_admin/user_order.dart';
 
 class ProductScreen extends StatefulWidget {
-  const ProductScreen({super.key, required this.title});
-
-  final String title;
+  const ProductScreen({super.key});
 
   @override
   State<ProductScreen> createState() => _ProductScreenState();
@@ -16,13 +13,14 @@ class ProductScreen extends StatefulWidget {
 class _ProductScreenState extends State<ProductScreen> {
   List<Product> products = [];
   final productTitle = TextEditingController();
-  final productDiscription = TextEditingController();
+  final productDescription = TextEditingController();
   final productPrice = TextEditingController();
-  final productImage = TextEditingController();
+  final productThumbnail = TextEditingController();
   final productCategory = TextEditingController();
+  final searchProduct = TextEditingController();
 
-  bool isUpdate = false;
-  int? updateIndex;
+  int selectedIndex = -1;
+  int productIndex = -1;
 
   @override
   void initState() {
@@ -32,177 +30,421 @@ class _ProductScreenState extends State<ProductScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text("Server Practice"),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => OrdersScreen(),
-                  ),
-                );
-            },
-            icon: Icon(Icons.shopping_bag_outlined),
-          )
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: productTitle,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: "Enter the product title",
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: TextField(
-              controller: productDiscription,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: "Enter the product discription",
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: productPrice,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: "Enter the product price",
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: TextField(
-              controller: productImage,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: "Enter the product image url",
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: productCategory,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: "Enter the product category",
-              ),
-            ),
-          ),
-          SizedBox(
-            height: 8.0,
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (isUpdate) {
-                updateData(updateIndex!);
-              } else {
-                var data = {
-                  "title": productTitle.text,
-                  "discription": productDiscription.text,
-                  "price": productPrice.text,
-                  "image": productImage.text,
-                  "category": productCategory.text
-                };
-                postData(data);
-              }
+    final isSmallScreen = MediaQuery.of(context).size.width < 1100;
 
-              productTitle.clear();
-              productPrice.clear();
-              productDiscription.clear();
-              productImage.clear();
-              productCategory.clear();
-              isUpdate = false;
-              updateIndex = null;
-              setState(() {});
-            },
-            child: Text(isUpdate ? "Update" : "Submit"),
+    // Apply filter logic
+    final filterProduct = searchProduct.text.isEmpty
+        ? products
+        : products.where((product) {
+            final searchText = searchProduct.text.toLowerCase();
+            return product.title.toLowerCase().contains(searchText) ||
+                product.category.toLowerCase().contains(searchText);
+          }).toList();
+
+    return Row(
+      children: [
+        // Left Side: Product List
+        Expanded(
+          flex: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Products',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: searchProduct,
+                        decoration: InputDecoration(
+                          hintText: 'Search product...',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20.0),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setState(() {});
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    SizedBox(
+                      height: 40,
+                      child: ElevatedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(
+                          Icons.add,
+                          color: Colors.white,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary),
+                        label: const Text(
+                          'Add New Product',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 250,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 3 / 4,
+                    ),
+                    itemCount: filterProduct.length,
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () {
+                          productTitle.text = products[index].title;
+                          productDescription.text = products[index].description;
+                          productPrice.text = products[index].price.toString();
+                          productThumbnail.text = products[index].thumbnail;
+                          productCategory.text = products[index].category;
+                          setState(() {
+                            selectedIndex = index;
+                            productIndex = index;
+                          });
+                        },
+                        child: Card(
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(
+                              color: selectedIndex == index
+                                  ? Colors.red
+                                  : Colors.transparent,
+                              width: 2,
+                            ),
+                          ),
+                          child: Stack(
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      width: double
+                                          .infinity, // Take full width of the card
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        color: const Color(0xfff3f3f3),
+                                      ),
+                                      child: Image.network(
+                                        filterProduct[index].thumbnail,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8.0),
+                                    child: Text(
+                                      filterProduct[index].title,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w500),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8.0),
+                                    child: Text(
+                                      '\$ ${filterProduct[index].price}',
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8.0),
+                                    child: Text(
+                                      'Stock: ${filterProduct[index].stock}',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                ],
+                              ),
+
+                              if (isSmallScreen && selectedIndex == index)
+                                Positioned(
+                                  right: 5,
+                                  top: 5,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.edit,
+                                        color: Colors.black),
+                                    onPressed: () {
+                                      showEditDialog(filterProduct[index]);
+                                    },
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
+        ),
+        // Right Side: Edit Product Details (only for larger screens)
+        if (!isSmallScreen)
           Expanded(
-            child: ListView.builder(
-              itemCount: products.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  child: ListTile(
-                    leading: Image.network(products[index].thumbnail),
-                    title: Text(products[index].title),
-                    subtitle: Row(
-                      children: [
-                        Text("\$${products[index].price.toString()}"),
-                        const SizedBox(
-                          width: 3.0,
-                        ),
-                        Text(products[index].category),
-                      ],
+            flex: 1,
+            child: Container(
+              color:const Color(0xfff3f3f3),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Edit Products',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            productTitle.text = products[index].title;
-                            productDiscription.text =
-                                products[index].description;
-                            productPrice.text =
-                                products[index].price.toString();
-                            productImage.text = products[index].thumbnail;
-                            productCategory.text = products[index].category;
-
-                            isUpdate = true;
-                            updateIndex = index;
-                            setState(() {});
-                          },
-                          icon: Icon(Icons.edit),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            deleteData(index);
-                          },
-                          icon: Icon(Icons.delete),
-                        ),
-                      ],
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          const Text(
+                            'Description',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: productTitle,
+                            decoration: InputDecoration(
+                              labelText: 'Product Name',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: productDescription,
+                            decoration: InputDecoration(
+                              labelText: 'Product Description',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: productPrice,
+                            decoration: InputDecoration(
+                              labelText: 'Product Price',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: productThumbnail,
+                            decoration: InputDecoration(
+                              labelText: 'Product Thumbnail',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: productCategory,
+                            decoration: InputDecoration(
+                              labelText: 'Product Category',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              SizedBox(
+                                height: 33,
+                                width: 120,
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    productTitle.clear();
+                                    productPrice.clear();
+                                    productDescription.clear();
+                                    productThumbnail.clear();
+                                    productCategory.clear();
+                                    selectedIndex = -1;
+                                    setState(() {});
+                                  },
+                                  icon: const Icon(
+                                    Icons.cancel,
+                                    color: Colors.black,
+                                  ),
+                                  style: ElevatedButton.styleFrom(),
+                                  label: const Text(
+                                    'Discard',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                height: 35,
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    updateData(productIndex);
+                                    productTitle.clear();
+                                    productPrice.clear();
+                                    productDescription.clear();
+                                    productThumbnail.clear();
+                                    productCategory.clear();
+                                    selectedIndex = -1;
+                                    setState(() {});
+                                  },
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .primary),
+                                  label: const Text(
+                                    'Update Product',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  ],
+                ),
+              ),
             ),
           ),
-        ],
-      ),
+      
+      ],
     );
   }
 
   void getData() async {
-    const url = "http://192.168.0.110:3000/api/product";
+    const url = "http://localhost:3000/api/products";
     final response = await http.get(Uri.parse(url));
     final decodeJson = jsonDecode(response.body) as List<dynamic>;
     setState(() {
       products = decodeJson.map((json) => Product.fromJson(json)).toList();
     });
-    // debugPrint("products:${decodeJson}");
+  }
+
+  void showEditDialog(Product product) {
+    productTitle.text = product.title;
+    productDescription.text = product.description;
+    productPrice.text = product.price.toString();
+    productThumbnail.text = product.thumbnail;
+    productCategory.text = product.category;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Product'),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: productTitle,
+                    decoration:
+                        const InputDecoration(labelText: 'Product Name'),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: productDescription,
+                    decoration:
+                        const InputDecoration(labelText: 'Product Description'),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: productPrice,
+                    decoration:
+                        const InputDecoration(labelText: 'Product Price'),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: productThumbnail,
+                    decoration:
+                        const InputDecoration(labelText: 'Product Thumbnail'),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: productCategory,
+                    decoration:
+                        const InputDecoration(labelText: 'Product Category'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                updateData(products.indexOf(product));
+                Navigator.of(context).pop();
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void postData(Map<String, dynamic> pdata) async {
-    // debugPrint("pdata: $pdata");
-    var url = Uri.parse("http://192.168.0.110:3000/api/products");
+    var url = Uri.parse("http://localhost:3000/api/products");
     final res = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(pdata),
     );
-    // debugPrint("Data posted successfully: ${res.body}");
     getData();
   }
 
@@ -210,7 +452,7 @@ class _ProductScreenState extends State<ProductScreen> {
     final idToDelete = products[index].id;
 
     try {
-      final url = Uri.parse("http://192.168.0.110:3000/api/products/$idToDelete");
+      final url = Uri.parse("http://localhost:3000/api/products/$idToDelete");
       final response = await http.delete(url);
 
       if (response.statusCode == 200) {
@@ -229,20 +471,20 @@ class _ProductScreenState extends State<ProductScreen> {
   void updateData(int index) async {
     final int idToUpdate = products[index].id;
 
-    final url = Uri.parse("http://192.168.0.110:3000/api/products/$idToUpdate");
+    final url = Uri.parse("http://localhost:3000/api/products/$idToUpdate");
 
-    await http.patch(
+    final res = await http.patch(
       url,
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "title": productTitle.text,
-        "discription": productDiscription.text,
+        "description": productDescription.text,
         "price": productPrice.text,
-        "image": productImage.text,
+        "thumbnail": productThumbnail.text,
         "category": productCategory.text
       }),
     );
-
+    debugPrint("Data updated successfully: ${res.body}");
     getData();
   }
 }

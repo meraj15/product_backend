@@ -79,8 +79,9 @@ class _OrderItemsState extends State<OrderItems> {
     );
   }
 
-  void fetchOrderStatus(String orderId) async {
-    final url = "http://192.168.0.110:3000/api/orders/status/$orderId";
+ void fetchOrderStatus(String orderId) async {
+  final url = "http://localhost:3000/api/orders/status/$orderId";
+  try {
     final response = await http.get(Uri.parse(url));
     final decodedJson = jsonDecode(response.body);
     debugPrint("decodedJson : $decodedJson");
@@ -89,35 +90,64 @@ class _OrderItemsState extends State<OrderItems> {
       bottomSheetText =
           currentOrderStatus == "Delivered" ? "Delivered" : "Out for Delivery";
     });
+  } catch (e) {
+    debugPrint("Error fetching order status: $e");
   }
+}
 
-  void logicBottemSheet() {
-    if (bottomSheetText == "Out for Delivery") {
-      setState(() {
-        bottomSheetText = "Delivered";
-      });
-      updateOrderStatus(widget.orderId, "Out for Delivery");
-    } else if (bottomSheetText == "Delivered") {
-      setState(() {
-        bottomSheetText = "Delivered";
-      });
-      updateOrderStatus(widget.orderId, "Delivered");
-    }
+void logicBottemSheet() {
+  if(currentOrderStatus == "Confirm"){
+     setState(() {
+     bottomSheetText = "Delivered";
+     });
+    updateOrderStatus(widget.orderId, "Out for Delivery");
+
   }
+  if (currentOrderStatus == "Out for Delivery") {
+    setState(() {
+      bottomSheetText = "Delivered";
+      currentOrderStatus = "Delivered"; 
+    });
+    updateOrderStatus(widget.orderId, "Delivered");
+  } else if (currentOrderStatus == "Delivered") {
+    setState(() {
+      bottomSheetText = "Out for Delivery";
+      currentOrderStatus = "Out for Delivery"; 
+    });
+    updateOrderStatus(widget.orderId, "Out for Delivery");
+  } else {
+    debugPrint("Unexpected order status: $currentOrderStatus");
+  }
+}
 
-  void updateOrderStatus(String orderId, String newStatus) async {
-    final url = "http://192.168.0.110:3000/api/orders/$orderId";
-    final headers = {"Content-Type": "application/json"};
-    final body = jsonEncode({"order_status": newStatus});
-    await http.put(
+void updateOrderStatus(String orderId, String newStatus) async {
+  final url = "http://localhost:3000/api/orders/$orderId";
+  final headers = {"Content-Type": "application/json"};
+  final body = jsonEncode({"order_status": newStatus});
+  try {
+    final response = await http.put(
       Uri.parse(url),
       headers: headers,
       body: body,
     );
+    if (response.statusCode == 200) {
+      debugPrint("Order status successfully updated to $newStatus");
+      setState(() {
+        currentOrderStatus = newStatus; 
+      });
+    } else {
+      debugPrint(
+          "Failed to update order status. Status code: ${response.statusCode}");
+    }
+  } catch (e) {
+    debugPrint("Error updating order status: $e");
   }
+}
+
+
 
   void getOrderItems(String orderId) async {
-    final url = "http://192.168.0.110:3000/api/orderitems/$orderId";
+    final url = "http://localhost:3000/api/orderitems/$orderId";
     final response = await http.get(Uri.parse(url));
     final decodeJson = jsonDecode(response.body) as List<dynamic>;
     setState(() {
