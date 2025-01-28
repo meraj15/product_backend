@@ -1,117 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:product_admin/product_screen.dart';
-import 'package:product_admin/user_order.dart';
+import 'package:product_admin/app.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
-  runApp(const MyApp());
+void main()async {
+   WidgetsFlutterBinding.ensureInitialized();
+    await Supabase.initialize(
+    url: 'https://njzvyrsxbwxpcyclztzo.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qenZ5cnN4Ynd4cGN5Y2x6dHpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcyMjM3MjUsImV4cCI6MjA1Mjc5OTcyNX0.vGwsuM9G2YzWBpPN0V89gisK6IvXvZF2nldihkwrZmI',
+  );
+
+  runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+// final List<Uint8List> images = [];
+//   final picker = ImagePicker();
+//   Uint8List? selectedImage;
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Admin Panel',
-      theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xfff9f9f9),
-        colorScheme: const ColorScheme.light(primary: Color(0xffdb3022)),
-      ),
-      home: const AdminPanelScreen(),
-    );
-  }
-}
+//   Future<void> pickImage() async {
+//     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+//     if (pickedFile != null) {
+//       final bytes = await pickedFile.readAsBytes(); 
+//       setState(() {
+//         images.add(bytes);
+//         selectedImage = bytes;
+//       });
+//     }
+//   }
 
-class AdminPanelScreen extends StatefulWidget {
-  const AdminPanelScreen({super.key});
 
-  @override
-  State<AdminPanelScreen> createState() => _AdminPanelScreenState();
-}
-
-class _AdminPanelScreenState extends State<AdminPanelScreen> {
-  int _selectedIndex = 0;
-
-  final List<Widget> _pages = [
-    const ProductScreen(),
-    const OrdersScreen(),
-    const Center(child: Text('Reviews Content')),
-    const Center(child: Text('Settings Content')),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Row(
-        children: [
-          // NavigationRail
-          NavigationRail(
-            backgroundColor:const Color(0xfff9f9f9),
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (int index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
-            labelType: NavigationRailLabelType.all,
-            indicatorColor: const Color(0xffdb3022),
-            leading: Padding(
-              padding: const EdgeInsets.only(top: 16.0),
-              child: Text(
-                'Admin',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-            ),
-            selectedIconTheme: const IconThemeData(color: Colors.white),
-            unselectedIconTheme: IconThemeData(color: Colors.grey.shade600),
-            selectedLabelTextStyle: const TextStyle(
-              color: Color(0xffdb3022),
-              fontWeight: FontWeight.bold,
-            ),
-            unselectedLabelTextStyle: TextStyle(
-              color: Colors.grey.shade600,
-            ),
-            destinations: const [
-              NavigationRailDestination(
-                padding: EdgeInsets.symmetric(vertical: 20,horizontal: 10),
-                icon: Icon(Icons.inventory),
-                selectedIcon: Icon(Icons.inventory_2),
-                label: Text('Products'),
-              ),
-              NavigationRailDestination(
-
-                icon: Icon(Icons.shopping_bag_outlined),
-                selectedIcon: Icon(Icons.shopping_bag),
-                label: Text('Orders'),
-              ),
-              NavigationRailDestination(
-                padding: EdgeInsets.symmetric(vertical: 20,horizontal: 10),
-
-                icon: Icon(Icons.reviews_outlined),
-                selectedIcon: Icon(Icons.reviews),
-                label: Text('Reviews'),
-              ),
-            ],
-          ),
-          const VerticalDivider(thickness: 1, width: 1),
-          // Main Content
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: _pages[_selectedIndex],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-}

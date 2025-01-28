@@ -2,90 +2,46 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:product_admin/order_items.dart';
+import 'package:product_admin/provider/product_provider.dart';
+import 'package:product_admin/screens/order_items_screen.dart';
+import 'package:provider/provider.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _OrdersScreenState createState() => _OrdersScreenState();
 }
 
 class _OrdersScreenState extends State<OrdersScreen> {
-  List<dynamic> orders = [];
-  List<dynamic> filteredOrders = [];
-  DateTime selectedDate = DateTime.now();
-String selectedDateString ="";
+ 
   @override
   void initState() {
     super.initState();
-    getOrdersData();
+    context.read<ProductData>().getOrdersData();
   }
 
-  void getOrdersData() async {
-    const url = "http://localhost:3000/api/userOrders";
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final decodeJson = jsonDecode(response.body) as List<dynamic>;
-        setState(() {
-          orders = decodeJson;
-          filterOrders("All");
-        });
-      } else {
-        debugPrint(
-            "Failed to fetch orders. Status code: ${response.statusCode}");
-      }
-    } catch (e) {
-      debugPrint("Error fetching orders: $e");
-    }
-  }
-
-  void filterOrders(String selectedStatus) {
-    setState(() {
-       selectedDateString = DateFormat('yyyy-MM-dd').format(selectedDate);
-      filteredOrders = orders.where((order) {
-        final orderDate = order['order_date'] ?? '';
-        final isDateMatch = orderDate.startsWith(selectedDateString);
-        final isStatusMatch =
-            selectedStatus == "All" || order['order_status'] == selectedStatus;
-        return isDateMatch && isStatusMatch;
-      }).toList();
-    });
-  }
-
-  Future<void> selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
-      filterOrders("All"); // Reapply the filter after changing the date
-    }
-  }
+  
 
   @override
   Widget build(BuildContext context) {
+     final providerRead = context.read<ProductData>();
     return DefaultTabController(
       length: 4,
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: const Text("All Orders"),
+              title: Text("All Orders", style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500)),
           bottom: TabBar(
-            indicatorColor: Colors.blue,
-            labelColor: Colors.blue,
+            indicatorColor: Theme.of(context).colorScheme.primary,
+            labelColor: Theme.of(context).colorScheme.primary,
             isScrollable: true,
             unselectedLabelColor: Colors.grey,
             indicatorWeight: 3,
             onTap: (index) {
               final selectedStatus = getStatusFromTabIndex(index);
-              filterOrders(selectedStatus);
+              context.read<ProductData>().filterOrders(selectedStatus);
             },
             tabs: const [
               Tab(text: "All Orders"),
@@ -105,24 +61,24 @@ String selectedDateString ="";
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    '${filteredOrders.length} orders found',
+                    '${providerRead.filteredOrders.length} orders found',
                     style: const TextStyle(fontSize: 16, color: Colors.black87),
                   ),
                 ),
                 Row(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.symmetric(vertical:8.0),
                       child: IconButton(
                                   icon: const Icon(Icons.calendar_today),
                                   onPressed: () {
-                                    selectDate(context);
+                                    context.read<ProductData>().selectDate(context);
                                   },
                                 ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(right:8.0),
-                      child: Text(selectedDateString),
+                      child: Text(providerRead.selectedDateString),
                     ),
                   ],
                 ),
@@ -155,9 +111,9 @@ String selectedDateString ="";
             ),
             Expanded(
               child: ListView.builder(
-                itemCount: filteredOrders.length,
+                itemCount: providerRead.filteredOrders.length,
                 itemBuilder: (context, index) {
-                  final order = filteredOrders[index];
+                  final order = providerRead.filteredOrders[index];
                   final price = NumberFormat.currency(symbol: "\u20B9")
                       .format(double.tryParse(order['price']?.toString() ?? '0'));
                   return InkWell(

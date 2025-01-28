@@ -1,7 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:product_admin/provider/product_provider.dart';
+import 'package:product_admin/screens/add_cart_screen.dart';
 import 'package:product_admin/model/product_model.dart';
+import 'package:provider/provider.dart';
 
 class ProductScreen extends StatefulWidget {
   const ProductScreen({super.key});
@@ -11,36 +15,29 @@ class ProductScreen extends StatefulWidget {
 }
 
 class _ProductScreenState extends State<ProductScreen> {
-  List<Product> products = [];
-  final productTitle = TextEditingController();
-  final productDescription = TextEditingController();
-  final productPrice = TextEditingController();
-  final productThumbnail = TextEditingController();
-  final productCategory = TextEditingController();
-  final searchProduct = TextEditingController();
-
-  int selectedIndex = -1;
-  int productIndex = -1;
-
   @override
   void initState() {
+    loadData();
     super.initState();
-    getData();
+  }
+
+  void loadData() async {
+    await context.read<ProductData>().getData();
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     final isSmallScreen = MediaQuery.of(context).size.width < 1100;
-
+    final providerRead = context.read<ProductData>();
     // Apply filter logic
-    final filterProduct = searchProduct.text.isEmpty
-        ? products
-        : products.where((product) {
-            final searchText = searchProduct.text.toLowerCase();
+    final filterProduct = providerRead.searchProduct.text.isEmpty
+        ? providerRead.products
+        : providerRead.products.where((product) {
+            final searchText = providerRead.searchProduct.text.toLowerCase();
             return product.title.toLowerCase().contains(searchText) ||
                 product.category.toLowerCase().contains(searchText);
           }).toList();
-
     return Row(
       children: [
         // Left Side: Product List
@@ -60,7 +57,7 @@ class _ProductScreenState extends State<ProductScreen> {
                   children: [
                     Expanded(
                       child: TextField(
-                        controller: searchProduct,
+                        controller: providerRead.searchProduct,
                         decoration: InputDecoration(
                           hintText: 'Search product...',
                           prefixIcon: const Icon(Icons.search),
@@ -77,7 +74,12 @@ class _ProductScreenState extends State<ProductScreen> {
                     SizedBox(
                       height: 40,
                       child: ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (context) =>  AddNewProduct()),
+                          );
+                        },
                         icon: const Icon(
                           Icons.add,
                           color: Colors.white,
@@ -107,14 +109,21 @@ class _ProductScreenState extends State<ProductScreen> {
                     itemBuilder: (context, index) {
                       return GestureDetector(
                         onTap: () {
-                          productTitle.text = products[index].title;
-                          productDescription.text = products[index].description;
-                          productPrice.text = products[index].price.toString();
-                          productThumbnail.text = products[index].thumbnail;
-                          productCategory.text = products[index].category;
+                          providerRead.productTitle.text =
+                              providerRead.products[index].title;
+                          providerRead.productDescription.text =
+                              providerRead.products[index].description;
+                          providerRead.productPrice.text =
+                              providerRead.products[index].price.toString();
+                          providerRead.productThumbnail.text =
+                              providerRead.products[index].thumbnail;
+                          providerRead.productCategory.text =
+                              providerRead.products[index].category;
+                          providerRead.productStock.text =
+                              providerRead.products[index].stock.toString();
                           setState(() {
-                            selectedIndex = index;
-                            productIndex = index;
+                            providerRead.selectedIndex = index;
+                            providerRead.productIndex = index;
                           });
                         },
                         child: Card(
@@ -122,7 +131,7 @@ class _ProductScreenState extends State<ProductScreen> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                             side: BorderSide(
-                              color: selectedIndex == index
+                              color: providerRead.selectedIndex == index
                                   ? Colors.red
                                   : Colors.transparent,
                               width: 2,
@@ -135,8 +144,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                 children: [
                                   Expanded(
                                     child: Container(
-                                      width: double
-                                          .infinity, // Take full width of the card
+                                      width: double.infinity,
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(10),
                                         color: const Color(0xfff3f3f3),
@@ -144,6 +152,20 @@ class _ProductScreenState extends State<ProductScreen> {
                                       child: Image.network(
                                         filterProduct[index].thumbnail,
                                         fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          debugPrint(
+                                              'Error loading image: $error');
+                                          return const Icon(Icons.error);
+                                        },
+                                        loadingBuilder:
+                                            (context, child, loadingProgress) {
+                                          if (loadingProgress == null)
+                                            return child;
+                                          return Center(
+                                              child:
+                                                  CircularProgressIndicator());
+                                        },
                                       ),
                                     ),
                                   ),
@@ -178,8 +200,8 @@ class _ProductScreenState extends State<ProductScreen> {
                                   const SizedBox(height: 2),
                                 ],
                               ),
-
-                              if (isSmallScreen && selectedIndex == index)
+                              if (isSmallScreen &&
+                                  providerRead.selectedIndex == index)
                                 Positioned(
                                   right: 5,
                                   top: 5,
@@ -197,7 +219,7 @@ class _ProductScreenState extends State<ProductScreen> {
                       );
                     },
                   ),
-                ),
+                )
               ],
             ),
           ),
@@ -207,7 +229,7 @@ class _ProductScreenState extends State<ProductScreen> {
           Expanded(
             flex: 1,
             child: Container(
-              color:const Color(0xfff3f3f3),
+              color: const Color(0xfff3f3f3),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -229,7 +251,7 @@ class _ProductScreenState extends State<ProductScreen> {
                           ),
                           const SizedBox(height: 8),
                           TextField(
-                            controller: productTitle,
+                            controller: providerRead.productTitle,
                             decoration: InputDecoration(
                               labelText: 'Product Name',
                               border: OutlineInputBorder(
@@ -239,7 +261,7 @@ class _ProductScreenState extends State<ProductScreen> {
                           ),
                           const SizedBox(height: 16),
                           TextField(
-                            controller: productDescription,
+                            controller: providerRead.productDescription,
                             decoration: InputDecoration(
                               labelText: 'Product Description',
                               border: OutlineInputBorder(
@@ -249,7 +271,13 @@ class _ProductScreenState extends State<ProductScreen> {
                           ),
                           const SizedBox(height: 16),
                           TextField(
-                            controller: productPrice,
+                            controller: providerRead.productPrice,
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d*\.?\d*$')),
+                            ],
                             decoration: InputDecoration(
                               labelText: 'Product Price',
                               border: OutlineInputBorder(
@@ -259,7 +287,7 @@ class _ProductScreenState extends State<ProductScreen> {
                           ),
                           const SizedBox(height: 16),
                           TextField(
-                            controller: productThumbnail,
+                            controller: providerRead.productThumbnail,
                             decoration: InputDecoration(
                               labelText: 'Product Thumbnail',
                               border: OutlineInputBorder(
@@ -269,9 +297,23 @@ class _ProductScreenState extends State<ProductScreen> {
                           ),
                           const SizedBox(height: 16),
                           TextField(
-                            controller: productCategory,
+                            controller: providerRead.productCategory,
                             decoration: InputDecoration(
                               labelText: 'Product Category',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: providerRead.productStock,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: InputDecoration(
+                              labelText: 'Product Stock',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(20.0),
                               ),
@@ -286,12 +328,13 @@ class _ProductScreenState extends State<ProductScreen> {
                                 width: 120,
                                 child: ElevatedButton.icon(
                                   onPressed: () {
-                                    productTitle.clear();
-                                    productPrice.clear();
-                                    productDescription.clear();
-                                    productThumbnail.clear();
-                                    productCategory.clear();
-                                    selectedIndex = -1;
+                                    providerRead.productTitle.clear();
+                                    providerRead.productPrice.clear();
+                                    providerRead.productDescription.clear();
+                                    providerRead.productThumbnail.clear();
+                                    providerRead.productCategory.clear();
+                                    providerRead.productStock.clear();
+                                    providerRead.selectedIndex = -1;
                                     setState(() {});
                                   },
                                   icon: const Icon(
@@ -312,14 +355,16 @@ class _ProductScreenState extends State<ProductScreen> {
                                 height: 35,
                                 child: ElevatedButton.icon(
                                   onPressed: () {
-                                    updateData(productIndex);
-                                    productTitle.clear();
-                                    productPrice.clear();
-                                    productDescription.clear();
-                                    productThumbnail.clear();
-                                    productCategory.clear();
-                                    selectedIndex = -1;
+                                    providerRead
+                                        .updateData(providerRead.productIndex);
                                     setState(() {});
+                                    providerRead.productTitle.clear();
+                                    providerRead.productPrice.clear();
+                                    providerRead.productDescription.clear();
+                                    providerRead.productThumbnail.clear();
+                                    providerRead.productCategory.clear();
+                                    providerRead.productStock.clear();
+                                    providerRead.selectedIndex = -1;
                                   },
                                   icon: const Icon(
                                     Icons.edit,
@@ -346,26 +391,18 @@ class _ProductScreenState extends State<ProductScreen> {
               ),
             ),
           ),
-      
       ],
     );
   }
 
-  void getData() async {
-    const url = "http://localhost:3000/api/products";
-    final response = await http.get(Uri.parse(url));
-    final decodeJson = jsonDecode(response.body) as List<dynamic>;
-    setState(() {
-      products = decodeJson.map((json) => Product.fromJson(json)).toList();
-    });
-  }
-
   void showEditDialog(Product product) {
-    productTitle.text = product.title;
-    productDescription.text = product.description;
-    productPrice.text = product.price.toString();
-    productThumbnail.text = product.thumbnail;
-    productCategory.text = product.category;
+    final providerRead = context.read<ProductData>();
+    providerRead.productTitle.text = product.title;
+    providerRead.productDescription.text = product.description;
+    providerRead.productPrice.text = product.price.toString();
+    providerRead.productThumbnail.text = product.thumbnail;
+    providerRead.productCategory.text = product.category;
+    providerRead.productStock.text = product.stock.toString();
 
     showDialog(
       context: context,
@@ -378,7 +415,7 @@ class _ProductScreenState extends State<ProductScreen> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextField(
-                    controller: productTitle,
+                    controller: providerRead.productTitle,
                     decoration:
                         const InputDecoration(labelText: 'Product Name'),
                   ),
@@ -386,7 +423,7 @@ class _ProductScreenState extends State<ProductScreen> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextField(
-                    controller: productDescription,
+                    controller: providerRead.productDescription,
                     decoration:
                         const InputDecoration(labelText: 'Product Description'),
                   ),
@@ -394,7 +431,12 @@ class _ProductScreenState extends State<ProductScreen> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextField(
-                    controller: productPrice,
+                    controller: providerRead.productPrice,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                    ],
                     decoration:
                         const InputDecoration(labelText: 'Product Price'),
                   ),
@@ -402,7 +444,7 @@ class _ProductScreenState extends State<ProductScreen> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextField(
-                    controller: productThumbnail,
+                    controller: providerRead.productThumbnail,
                     decoration:
                         const InputDecoration(labelText: 'Product Thumbnail'),
                   ),
@@ -410,9 +452,21 @@ class _ProductScreenState extends State<ProductScreen> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextField(
-                    controller: productCategory,
+                    controller: providerRead.productCategory,
                     decoration:
                         const InputDecoration(labelText: 'Product Category'),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: providerRead.productStock,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    decoration:
+                        const InputDecoration(labelText: 'Product Stock'),
                   ),
                 ),
               ],
@@ -427,7 +481,8 @@ class _ProductScreenState extends State<ProductScreen> {
             ),
             TextButton(
               onPressed: () {
-                updateData(products.indexOf(product));
+                providerRead.updateData(
+                    context.read<ProductData>().products.indexOf(product));
                 Navigator.of(context).pop();
               },
               child: const Text('Update'),
@@ -438,53 +493,23 @@ class _ProductScreenState extends State<ProductScreen> {
     );
   }
 
-  void postData(Map<String, dynamic> pdata) async {
-    var url = Uri.parse("http://localhost:3000/api/products");
-    final res = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(pdata),
-    );
-    getData();
-  }
+  // void deleteData(int index) async {
+  //   final idToDelete = products[index].id;
 
-  void deleteData(int index) async {
-    final idToDelete = products[index].id;
+  //   try {
+  //     final url = Uri.parse("http://localhost:3000/api/products/$idToDelete");
+  //     final response = await http.delete(url);
 
-    try {
-      final url = Uri.parse("http://localhost:3000/api/products/$idToDelete");
-      final response = await http.delete(url);
-
-      if (response.statusCode == 200) {
-        setState(() {
-          products.removeAt(index);
-        });
-      } else {
-        debugPrint(
-            "Failed to delete data. Status code: ${response.statusCode}");
-      }
-    } catch (e) {
-      debugPrint("Error deleting data: $e");
-    }
-  }
-
-  void updateData(int index) async {
-    final int idToUpdate = products[index].id;
-
-    final url = Uri.parse("http://localhost:3000/api/products/$idToUpdate");
-
-    final res = await http.patch(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "title": productTitle.text,
-        "description": productDescription.text,
-        "price": productPrice.text,
-        "thumbnail": productThumbnail.text,
-        "category": productCategory.text
-      }),
-    );
-    debugPrint("Data updated successfully: ${res.body}");
-    getData();
-  }
+  //     if (response.statusCode == 200) {
+  //       setState(() {
+  //         products.removeAt(index);
+  //       });
+  //     } else {
+  //       debugPrint(
+  //           "Failed to delete data. Status code: ${response.statusCode}");
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Error deleting data: $e");
+  //   }
+  // }
 }
