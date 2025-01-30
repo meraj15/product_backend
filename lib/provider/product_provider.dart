@@ -1,14 +1,10 @@
 import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:product_admin/EndPoint/endpoint.dart';
 import 'package:product_admin/model/product_model.dart';
 // ignore: avoid_web_libraries_in_flutter
-
 
 class ProductData extends ChangeNotifier {
   List<Product> products = [];
@@ -21,14 +17,8 @@ class ProductData extends ChangeNotifier {
   List<Product> orderedItems = [];
   String bottomSheetText = "Out for Delivery";
   String currentOrderStatus = "";
-  // List<dynamic> uploadedImages = []; // dynamic can hold both types
-  dynamic selectedImage;
-  List<Uint8List> newProductImageUrls = [];
-
-  void addImage(Uint8List imageData) {
-    newProductImageUrls.add(imageData);
-    notifyListeners();
-  }
+  List<dynamic> productReviews = [];
+  List<Product> productContainReviews = [];
 
   final productTitle = TextEditingController();
   final productDescription = TextEditingController();
@@ -50,7 +40,6 @@ class ProductData extends ChangeNotifier {
   final newProductCategoryController = TextEditingController();
   final newProductMinimumOrderQuantityController = TextEditingController();
 
-
   Future<void> getData() async {
     final response = await http.get(Uri.parse(APIEndpoint.productGetEndPoint));
     final decodeJson = jsonDecode(response.body) as List<dynamic>;
@@ -61,34 +50,39 @@ class ProductData extends ChangeNotifier {
     notifyListeners();
   }
 
-  void postNewProduct(Map<String, dynamic> pdata) async {
+  void postNewProduct(List<String> newProductImageUrls) async {
     var url = Uri.parse(APIEndpoint.postNewProduct);
-    await http.post(
+    Map<String, dynamic> updateProductData = {
+      // 'id':196,
+      'title': newProductTitleController.text,
+      'description': newProductDescriptionController.text,
+      'category': newProductCategoryController.text,
+      'price': double.tryParse(newProductPriceController.text) ?? 0.0,
+      'discountpercentage':
+          double.tryParse(newProductDiscountController.text) ?? 0.0,
+      'rating': 7.0,
+      'stock': int.tryParse(newProductStockController.text) ?? 0,
+      'brand': newProductBrandController.text,
+      'warrantyinformation': newProductWarrantyController.text,
+      'shippinginformation': newProductShippingInfoController.text,
+      'availabilitystatus': newProductAvailabilityStatusController.text,
+      'returnpolicy': newProductReturnPolicyController.text,
+      'minimumorderquantity':
+          int.tryParse(newProductMinimumOrderQuantityController.text) ?? 0,
+      'images': newProductImageUrls,
+      'thumbnail':
+          newProductImageUrls.isNotEmpty ? newProductImageUrls.first : '',
+    };
+    debugPrint("updateProductData : $updateProductData");
+
+    final res = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode(pdata),
+      body: jsonEncode(updateProductData),
     );
+    debugPrint("res : ${res.body}");
     getData();
-
-    // Map<String, dynamic> updateProductData = {
-    //   'title': newProductTitleController.text,
-    //   'description': newProductDescriptionController.text,
-    //   'price': double.tryParse(newProductPriceController.text) ?? 0.0,
-    //   'thumbnail':
-    //       newProductImageUrls.isNotEmpty ? newProductImageUrls.first : '',
-    //   'discountpercentage':
-    //       double.tryParse(newProductDiscountController.text) ?? 0.0,
-    //   'category': newProductCategoryController.text,
-    //   'stock': int.tryParse(newProductStockController.text) ?? 0,
-    //   'brand': newProductBrandController.text,
-    //   'warrantyinformation': newProductWarrantyController.text,
-    //   'shippinginformation': newProductShippingInfoController.text,
-    //   'availabilitystatus': newProductAvailabilityStatusController.text,
-    //   'returnpolicy': newProductReturnPolicyController.text,
-    //   'minimumorderquantity':
-    //       int.tryParse(newProductMinimumOrderQuantityController.text) ?? 0,
-    //   'images': newProductImageUrls,
-    // };
+    notifyListeners();
   }
 
   void updateData(int index) async {
@@ -100,21 +94,32 @@ class ProductData extends ChangeNotifier {
     final url = Uri.parse("${APIEndpoint.updateData}/$idToUpdate");
 
     try {
-      await http.patch(
+      final res = await http.patch(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          'title': productTitle.text,
-          'description': productDescription.text,
+          'title': productTitle.text.isNotEmpty ? productTitle.text : null,
+          'description': productDescription.text.isNotEmpty
+              ? productDescription.text
+              : null,
           'price': double.tryParse(productPrice.text) ?? 0.0,
-          'thumbnail': productThumbnail.text,
-          'category': productCategory.text,
+          'thumbnail':
+              productThumbnail.text.isNotEmpty ? productThumbnail.text : null,
+          'category':
+              productCategory.text.isNotEmpty ? productCategory.text : null,
           'stock': int.tryParse(productStock.text) ?? 0,
         }),
       );
-      getData();
-      selectedIndex = -1;
-      notifyListeners();
+
+      if (res.statusCode == 200) {
+        debugPrint("Update successful: ${res.body}");
+        await getData();
+        selectedIndex = -1;
+
+        notifyListeners();
+      } else {
+        debugPrint("Update failed: ${res.statusCode}, ${res.body}");
+      }
     } catch (e) {
       debugPrint("Error updating product: $e");
     }
@@ -147,6 +152,7 @@ class ProductData extends ChangeNotifier {
           selectedStatus == "All" || order['order_status'] == selectedStatus;
       return isDateMatch && isStatusMatch;
     }).toList();
+    debugPrint("filteredOrders : $filteredOrders");
     notifyListeners();
   }
 
@@ -232,5 +238,20 @@ class ProductData extends ChangeNotifier {
     notifyListeners();
   }
 
+  void getReviews(int productId) async {
+    final url = '${APIEndpoint.getReviews}/products/$productId/reviews';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final decodeJson = jsonDecode(response.body) as List<dynamic>;
 
+        productReviews = decodeJson;
+        notifyListeners();
+      } else {
+        throw Exception("Failed to load reviews");
+      }
+    } catch (error) {
+      debugPrint("Error fetching reviews: $error");
+    }
+  }
 }

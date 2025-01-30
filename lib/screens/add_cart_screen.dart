@@ -1,6 +1,12 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
+import 'package:product_admin/app.dart';
+import 'package:product_admin/provider/product_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AddNewProduct extends StatefulWidget {
   const AddNewProduct({super.key});
@@ -10,71 +16,92 @@ class AddNewProduct extends StatefulWidget {
 }
 
 class _AddNewProductState extends State<AddNewProduct> {
- final List<Uint8List> images = [];
+  final List<Uint8List> images = [];
   final picker = ImagePicker();
   Uint8List? selectedImage;
 
+  // Method to pick an image from the gallery
   Future<void> pickImage() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      final bytes = await pickedFile.readAsBytes(); 
+      final bytes = await pickedFile.readAsBytes();
       setState(() {
         images.add(bytes);
         selectedImage = bytes;
       });
     }
   }
+
+  // Convert List<Uint8List> to List<String> Base64 encoded images
+  List<String> getBase64Images() {
+    return images.map((image) => base64Encode(image)).toList();
+  }
+
+  Future<List<String>> uploadBase64Images(List<String> base64Images) async {
+    final supabaseClient = Supabase.instance.client;
+    List<String> uploadedUrls = [];
+    for (var i = 0; i < base64Images.length; i++) {
+      Uint8List imageBytes = base64Decode(base64Images[i]);
+
+      // Generate a unique file name for each image
+      final fileName = 'image_${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
+
+      try {
+        // Upload image to Supabase storage (product_images bucket)
+        await supabaseClient.storage
+            .from('product_images')
+            .uploadBinary(fileName, imageBytes);
+
+        // Get the public URL of the uploaded image
+        final String publicUrl = supabaseClient.storage
+            .from('product_images')
+            .getPublicUrl(fileName);
+
+        uploadedUrls.add(publicUrl);
+      } catch (e) {
+        debugPrint('Error uploading image $i: $e');
+      }
+    }
+    return uploadedUrls;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // final providerRead = context.read<ProductData>();
+    final providerRead = context.read<ProductData>();
     return Scaffold(
       backgroundColor: const Color(0xfff9f9f9),
       appBar: AppBar(
-        backgroundColor: Colors.red,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0.5,
         title: const Text(
           "Add New Product",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
         ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
-            child: ElevatedButton(
+            child: ElevatedButton.icon(
               onPressed: () async {
-                  // final newProduct = {
-                  //   'title': providerRead.newProductTitleController.text,
-                  //   'description': providerRead.newProductDescriptionController.text,
-                  //   'category': providerRead.newProductCategoryController.text,
-                  //   'price': double.tryParse(providerRead.newProductPriceController.text) ?? 0.0,
-                  //   'discountpercentage': double.tryParse(providerRead.newProductDiscountController.text) ?? 0.0,
-                  //   'stock': int.tryParse(providerRead.newProductStockController.text) ?? 0,
-                  //   'brand': providerRead.newProductBrandController.text,
-                  //   'warrantyinformation': providerRead.newProductWarrantyController.text,
-                  //   'shippinginformation': providerRead.newProductShippingInfoController.text,
-                  //   'availabilitystatus': providerRead.newProductAvailabilityStatusController.text,
-                  //   'returnpolicy': providerRead.newProductReturnPolicyController.text,
-                  //   'minimumorderquantity': int.tryParse(providerRead.newProductMinimumOrderQuantityController.text) ?? 0,
-                  //   'images': providerRead.newProductImageUrls,
-                  //   'thumbnail': providerRead.newProductImageUrls.isNotEmpty ? providerRead.newProductImageUrls.first : '',
-                  // };
-
-                  // List<String> imageUrls = await _uploadImages();
-                  // debugPrint("imageUrls : $imageUrls");
-                  // // Uncomment the following line to post the new product after uploading images
-                  // // providerRead.postNewProduct(newProduct);
-                  // ScaffoldMessenger.of(context).showSnackBar(
-                  //   const SnackBar(content: Text('Product added successfully')),
-                  // );
-                },
+                // Upload images to Supabase
+                List<String> productImages =
+                    await uploadBase64Images(getBase64Images());
+                providerRead.postNewProduct(productImages);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Product added successfully')),
+                );
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
+                backgroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text(
+              label: Text(
                 "Add Product",
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w500),
               ),
+              icon: const Icon(Icons.add),
             ),
           ),
         ],
@@ -82,24 +109,24 @@ class _AddNewProductState extends State<AddNewProduct> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(24, 24, 24, 40),
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Left Section
-              Expanded(
+               Expanded(
                 flex: 2,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('General Information',
                         style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w600)),
+                            fontSize: 20, fontWeight: FontWeight.w600)),
                     SizedBox(height: 24),
-                    buildInputField('Name Product', 'Enter the product name'),
+                    buildInputField('Name Product', 'Enter the product name',providerRead.newProductTitleController),
                     SizedBox(height: 24),
                     buildInputField(
-                        'Description Product', 'Enter the product description',
+                        'Description Product', 'Enter the product description',providerRead.newProductDescriptionController,
                         maxLines: 4),
                     SizedBox(height: 24),
                     Row(
@@ -107,7 +134,7 @@ class _AddNewProductState extends State<AddNewProduct> {
                         Expanded(
                           child: buildInputField(
                             'Stock',
-                            'Enter stock quantity',
+                            'Enter stock quantity',providerRead.newProductStockController,
                             keyboardType: TextInputType.number,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly
@@ -118,7 +145,7 @@ class _AddNewProductState extends State<AddNewProduct> {
                         Expanded(
                           child: buildInputField(
                             'Category',
-                            'Enter category name',
+                            'Enter category name',providerRead.newProductCategoryController,
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
                                   RegExp(r'[a-zA-Z\s]'))
@@ -130,27 +157,21 @@ class _AddNewProductState extends State<AddNewProduct> {
                     SizedBox(height: 32),
                     Text('Shipping Information',
                         style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w600)),
+                            fontSize: 20, fontWeight: FontWeight.w600)),
                     SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
                           child: buildInputField(
-                            'Shipping Price',
-                            'Enter shipping price',
-                            keyboardType:
-                                TextInputType.numberWithOptions(decimal: true),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                  RegExp(r'^\d*\.?\d*$'))
-                            ],
+                            'Product Shipping Information',
+                            'Enter shipping Information',providerRead.newProductShippingInfoController,
                           ),
                         ),
                         SizedBox(width: 24),
                         Expanded(
                           child: buildInputField(
                             'Availability Status',
-                            'Enter availability',
+                            'Enter availability',providerRead.newProductAvailabilityStatusController,
                           ),
                         ),
                       ],
@@ -160,12 +181,12 @@ class _AddNewProductState extends State<AddNewProduct> {
                       children: [
                         Expanded(
                             child: buildInputField(
-                                'Return Policy', 'Enter the return policy')),
+                                'Return Policy', 'Enter the return policy',providerRead.newProductReturnPolicyController)),
                         SizedBox(width: 24),
                         Expanded(
                           child: buildInputField(
                             'Minimum Order Quantity',
-                            'Enter the minimum order quantity',
+                            'Enter the minimum order quantity',providerRead.newProductMinimumOrderQuantityController,
                             keyboardType: TextInputType.number,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly
@@ -174,17 +195,39 @@ class _AddNewProductState extends State<AddNewProduct> {
                         ),
                       ],
                     ),
+                     SizedBox(height: 32),
+                    Text('Brand Details',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.w600)),
+                    SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: buildInputField(
+                            'Product Brand',
+                            'Enter product brand',providerRead.newProductBrandController,
+                          ),
+                        ),
+                        SizedBox(width: 24),
+                        Expanded(
+                          child: buildInputField(
+                            'Product Warranty',
+                            'Enter product warranty',providerRead.newProductWarrantyController,
+                          ),
+                        ),
+                      ],
+                    ),
                     SizedBox(height: 32),
                     Text('Pricing',
                         style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w600)),
+                            fontSize: 20, fontWeight: FontWeight.w600)),
                     SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
                           child: buildInputField(
                             'Price',
-                            'Enter the product price',
+                            'Enter the product price',providerRead.newProductPriceController,
                             keyboardType:
                                 TextInputType.numberWithOptions(decimal: true),
                             inputFormatters: [
@@ -197,11 +240,11 @@ class _AddNewProductState extends State<AddNewProduct> {
                         Expanded(
                           child: buildInputField(
                             'Discount(%)',
-                            'Enter the product discount',
+                            'Enter the product discount',providerRead.newProductDiscountController,
                             keyboardType: TextInputType.number,
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
-                                  RegExp(r'^\d*$'))
+                                  RegExp(r'^\d*\.?\d*$'))
                             ],
                           ),
                         ),
@@ -228,7 +271,7 @@ class _AddNewProductState extends State<AddNewProduct> {
                         Text('Upload Product Images',
                             style: TextStyle(
                                 fontSize: 18, fontWeight: FontWeight.w600)),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
                         // Image Upload Box (Default & Selected Image)
                         GestureDetector(
@@ -241,7 +284,7 @@ class _AddNewProductState extends State<AddNewProduct> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: selectedImage == null
-                                ? Center(
+                                ? const Center(
                                     child: Text("No Image Selected",
                                         style: TextStyle(color: Colors.grey)))
                                 : ClipRRect(
@@ -251,7 +294,7 @@ class _AddNewProductState extends State<AddNewProduct> {
                                   ),
                           ),
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
                         // Image Picker List (Horizontal Scroll)
                         SingleChildScrollView(
@@ -267,10 +310,11 @@ class _AddNewProductState extends State<AddNewProduct> {
                                     border: Border.all(color: Colors.grey),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Icon(Icons.add, color: Colors.black),
+                                  child: const Icon(Icons.add,
+                                      color: Colors.black),
                                 ),
                               ),
-                              SizedBox(
+                              const SizedBox(
                                 width: 10,
                               ),
                               ...images.map((image) => GestureDetector(
@@ -280,25 +324,18 @@ class _AddNewProductState extends State<AddNewProduct> {
                                       });
                                     },
                                     child: Container(
-                                      margin: EdgeInsets.only(right: 8),
+                                      margin: const EdgeInsets.only(right: 8),
                                       width: 80,
                                       height: 80,
                                       decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: selectedImage == image
-                                              ? Colors.black
-                                              : Colors.grey,
-                                          width: selectedImage == image ? 2 : 1,
-                                        ),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Image.memory(image,
-                                            fit: BoxFit.cover),
-                                      ),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          image: DecorationImage(
+                                            image: MemoryImage(image),
+                                            fit: BoxFit.cover,
+                                          )),
                                     ),
-                                  )),
+                                  ))
                             ],
                           ),
                         ),
@@ -311,41 +348,51 @@ class _AddNewProductState extends State<AddNewProduct> {
           ),
         ),
       ),
-  
     );
   }
 
-  Widget buildInputField(
-    String label,
-    String hintText, {
-    int maxLines = 1,
-    TextInputType keyboardType = TextInputType.text,
-    List<TextInputFormatter>? inputFormatters,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        ),
-        SizedBox(height: 8),
-        TextFormField(
-          maxLines: maxLines,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            hintText: hintText,
-            contentPadding: EdgeInsets.all(12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
-            ),
+ Widget buildInputField(
+  String label,
+  String hintText,
+  TextEditingController controller, {
+  int maxLines = 1,
+  TextInputType keyboardType = TextInputType.text,
+  List<TextInputFormatter>? inputFormatters,
+}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+      ),
+      SizedBox(height: 8),
+      TextFormField(
+        controller: controller,
+        maxLines: maxLines,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.white,
+          hintText: hintText,
+          contentPadding: EdgeInsets.all(12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.grey), // Grey border
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.grey), // Grey border when enabled
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.grey), // Grey border when focused
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
+
 }
