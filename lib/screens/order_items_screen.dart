@@ -33,9 +33,9 @@ class _OrderItemsState extends State<OrderItems> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: providerRead.orderedItems.isEmpty
-          ? Center(child: Text("No items found for this order."))
+          ? const Center(child: Text("No items found for this order."))
           : Container(
-              margin: EdgeInsets.all(20),
+              margin:const EdgeInsets.all(20),
               child: ListView.builder(
                 itemCount: providerRead.orderedItems.length,
                 itemBuilder: (context, index) {
@@ -68,19 +68,19 @@ class _OrderItemsState extends State<OrderItems> {
                             ),
                           ),
                         ),
-                        SizedBox(width: 10),
+                       const SizedBox(width: 10),
 
                         // Product Details
                         Expanded(
                           child: Text(
                             product.title,
-                            style: TextStyle(fontWeight: FontWeight.w500),
+                            style:const TextStyle(fontWeight: FontWeight.w500),
                           ),
                         ),
                         Expanded(
                           child: Column(
                             children: [
-                              Text(
+                             const Text(
                                 'Price',
                                 style: TextStyle(
                                     fontWeight: FontWeight.w500,
@@ -88,7 +88,7 @@ class _OrderItemsState extends State<OrderItems> {
                               ),
                               Text(
                                 '\$${product.price.toStringAsFixed(2)}',
-                                style: TextStyle(fontWeight: FontWeight.w500),
+                                style:const TextStyle(fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
@@ -96,7 +96,7 @@ class _OrderItemsState extends State<OrderItems> {
                         Expanded(
                           child: Column(
                             children: [
-                              Text(
+                             const Text(
                                 'Quantity',
                                 style: TextStyle(
                                     fontWeight: FontWeight.w500,
@@ -104,7 +104,7 @@ class _OrderItemsState extends State<OrderItems> {
                               ),
                               Text(
                                 '${product.quantity}',
-                                style: TextStyle(fontWeight: FontWeight.w500),
+                                style:const TextStyle(fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
@@ -112,7 +112,7 @@ class _OrderItemsState extends State<OrderItems> {
                         Expanded(
                           child: Column(
                             children: [
-                              Text(
+                             const Text(
                                 'Total Price',
                                 style: TextStyle(
                                     fontWeight: FontWeight.w500,
@@ -120,7 +120,7 @@ class _OrderItemsState extends State<OrderItems> {
                               ),
                               Text(
                                 '\$${(product.price * product.quantity).toStringAsFixed(2)}',
-                                style: TextStyle(fontWeight: FontWeight.w500),
+                                style:const TextStyle(fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
@@ -143,7 +143,7 @@ class _OrderItemsState extends State<OrderItems> {
           child: Center(
               child: Text(
             providerRead.bottomSheetText,
-            style: TextStyle(
+            style:const TextStyle(
               fontSize: 16,
               color: Colors.white,
               fontWeight: FontWeight.w500,

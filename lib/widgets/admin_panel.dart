@@ -81,15 +81,15 @@ class _SideBarState extends State<SideBar> {
             ),
           ),
           if (selectedSideBar == 1)
-            Expanded(
+           const Expanded(
               child: ProductScreen(),
             ),
           if (selectedSideBar == 2)
-            Expanded(
+           const Expanded(
               child: OrdersScreen(),
             ),
           if (selectedSideBar == 3)
-            Expanded(
+           const Expanded(
               child: ReviewsScreen(),
             ),
         ],

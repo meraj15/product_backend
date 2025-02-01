@@ -10,7 +10,7 @@ class APIEndpoint {
    static const String getOrderItems = "$_baseEndPoint/orderitems";
    static const String getReviews= _baseEndPoint;
    static const String fetchProductContainReviews= "$_baseEndPoint/products-with-reviews";
-//    static const String getCartsData = "$_baseEndPoint/carts";
+   static const String getAllReviews = "$_baseEndPoint/products/reviews";
 //    static const String deleteCartData = "$_baseEndPoint/carts";
 //    static const String deleteFavouriteData = "$_baseEndPoint/favourites";
 //    static const String getFavouriteData = "$_baseEndPoint/favourites";
@@ -20,7 +20,7 @@ class APIEndpoint {
 //    static const String fetchUserOrders = "$_baseEndPoint/myorders";
 //    static const String postSignUpData = "$_baseEndPoint/signup";
 //    static const String userLogin = "$_baseEndPoint/login";
-// static const String fetchMyAllReviews = "$_baseEndPoint/myallreviews";
-// static const String getReviews= _baseEndPoint;
-// static const String postReviews= _baseEndPoint;
+//    static const String fetchMyAllReviews = "$_baseEndPoint/myallreviews";
+//    static const String getReviews= _baseEndPoint;
+//    static const String postReviews= _baseEndPoint;
 }

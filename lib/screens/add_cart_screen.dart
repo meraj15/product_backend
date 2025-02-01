@@ -119,16 +119,16 @@ class _AddNewProductState extends State<AddNewProduct> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('General Information',
+                   const Text('General Information',
                         style: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.w600)),
-                    SizedBox(height: 24),
+                   const SizedBox(height: 24),
                     buildInputField('Name Product', 'Enter the product name',providerRead.newProductTitleController),
-                    SizedBox(height: 24),
+                   const SizedBox(height: 24),
                     buildInputField(
                         'Description Product', 'Enter the product description',providerRead.newProductDescriptionController,
                         maxLines: 4),
-                    SizedBox(height: 24),
+                   const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
@@ -141,7 +141,7 @@ class _AddNewProductState extends State<AddNewProduct> {
                             ],
                           ),
                         ),
-                        SizedBox(width: 24),
+                       const SizedBox(width: 24),
                         Expanded(
                           child: buildInputField(
                             'Category',
@@ -154,11 +154,11 @@ class _AddNewProductState extends State<AddNewProduct> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 32),
-                    Text('Shipping Information',
+                   const SizedBox(height: 32),
+                   const Text('Shipping Information',
                         style: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.w600)),
-                    SizedBox(height: 24),
+                   const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
@@ -167,7 +167,7 @@ class _AddNewProductState extends State<AddNewProduct> {
                             'Enter shipping Information',providerRead.newProductShippingInfoController,
                           ),
                         ),
-                        SizedBox(width: 24),
+                       const SizedBox(width: 24),
                         Expanded(
                           child: buildInputField(
                             'Availability Status',
@@ -176,13 +176,13 @@ class _AddNewProductState extends State<AddNewProduct> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 24),
+                   const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
                             child: buildInputField(
                                 'Return Policy', 'Enter the return policy',providerRead.newProductReturnPolicyController)),
-                        SizedBox(width: 24),
+                       const SizedBox(width: 24),
                         Expanded(
                           child: buildInputField(
                             'Minimum Order Quantity',
@@ -195,11 +195,11 @@ class _AddNewProductState extends State<AddNewProduct> {
                         ),
                       ],
                     ),
-                     SizedBox(height: 32),
-                    Text('Brand Details',
+                    const SizedBox(height: 32),
+                   const Text('Brand Details',
                         style: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.w600)),
-                    SizedBox(height: 24),
+                   const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
@@ -208,7 +208,7 @@ class _AddNewProductState extends State<AddNewProduct> {
                             'Enter product brand',providerRead.newProductBrandController,
                           ),
                         ),
-                        SizedBox(width: 24),
+                       const SizedBox(width: 24),
                         Expanded(
                           child: buildInputField(
                             'Product Warranty',
@@ -217,11 +217,11 @@ class _AddNewProductState extends State<AddNewProduct> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 32),
-                    Text('Pricing',
+                   const SizedBox(height: 32),
+                   const Text('Pricing',
                         style: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.w600)),
-                    SizedBox(height: 24),
+                   const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
@@ -229,14 +229,14 @@ class _AddNewProductState extends State<AddNewProduct> {
                             'Price',
                             'Enter the product price',providerRead.newProductPriceController,
                             keyboardType:
-                                TextInputType.numberWithOptions(decimal: true),
+                               const TextInputType.numberWithOptions(decimal: true),
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
                                   RegExp(r'^\d*\.?\d*$'))
                             ],
                           ),
                         ),
-                        SizedBox(width: 24),
+                       const SizedBox(width: 24),
                         Expanded(
                           child: buildInputField(
                             'Discount(%)',
@@ -253,7 +253,7 @@ class _AddNewProductState extends State<AddNewProduct> {
                   ],
                 ),
               ),
-              SizedBox(width: 48),
+             const SizedBox(width: 48),
 
               // Right Section - Upload Images
               Expanded(
@@ -268,7 +268,7 @@ class _AddNewProductState extends State<AddNewProduct> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Upload Product Images',
+                       const Text('Upload Product Images',
                             style: TextStyle(
                                 fontSize: 18, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 16),
@@ -364,9 +364,9 @@ class _AddNewProductState extends State<AddNewProduct> {
     children: [
       Text(
         label,
-        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        style:const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
       ),
-      SizedBox(height: 8),
+     const SizedBox(height: 8),
       TextFormField(
         controller: controller,
         maxLines: maxLines,
@@ -376,18 +376,18 @@ class _AddNewProductState extends State<AddNewProduct> {
           filled: true,
           fillColor: Colors.white,
           hintText: hintText,
-          contentPadding: EdgeInsets.all(12),
+          contentPadding:const EdgeInsets.all(12),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey), // Grey border
+            borderSide:const BorderSide(color: Colors.grey), // Grey border
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey), // Grey border when enabled
+            borderSide:const BorderSide(color: Colors.grey), // Grey border when enabled
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey), // Grey border when focused
+            borderSide:const BorderSide(color: Colors.grey), // Grey border when focused
           ),
         ),
       ),

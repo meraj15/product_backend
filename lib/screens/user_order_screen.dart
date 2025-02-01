@@ -10,6 +10,7 @@ class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _OrdersScreenState createState() => _OrdersScreenState();
 }
 
@@ -33,7 +34,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             PreferredSize(
               preferredSize: const Size.fromHeight(30.0),
               child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 15),
+                padding:const EdgeInsets.symmetric(vertical: 15),
                 child: TabBar(
                   indicatorColor: Theme.of(context).colorScheme.primary,
                   labelColor: Theme.of(context).colorScheme.primary,
@@ -134,7 +135,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               Expanded(flex: 3, child: Center(child: Text("Address"))),
               Expanded(flex: 2, child: Center(child: Text("Mobile"))),
               Expanded(flex: 2, child: Center(child: Text("Price"))),
-              Expanded(flex: 2, child: Center(child: Text("Time"))),
+              Expanded(flex: 1, child: Center(child: Text("Time"))),
               Expanded(flex: 2, child: Center(child: Text("Status"))),
             ],
           ),

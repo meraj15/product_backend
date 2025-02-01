@@ -17,8 +17,8 @@ class ProductData extends ChangeNotifier {
   List<Product> orderedItems = [];
   String bottomSheetText = "Out for Delivery";
   String currentOrderStatus = "";
-  List<dynamic> productReviews = [];
-  List<Product> productContainReviews = [];
+  List<dynamic> productAllReviews = [];
+  List<dynamic> productSpecificReviews = [];
 
   final productTitle = TextEditingController();
   final productDescription = TextEditingController();
@@ -39,6 +39,8 @@ class ProductData extends ChangeNotifier {
   final newProductReturnPolicyController = TextEditingController();
   final newProductCategoryController = TextEditingController();
   final newProductMinimumOrderQuantityController = TextEditingController();
+
+  
 
   Future<void> getData() async {
     final response = await http.get(Uri.parse(APIEndpoint.productGetEndPoint));
@@ -238,20 +240,51 @@ class ProductData extends ChangeNotifier {
     notifyListeners();
   }
 
-  void getReviews(int productId) async {
+  // void getReviews(int productId) async {
+  //   final url = '${APIEndpoint.getReviews}/products/$productId/reviews';
+  //   try {
+  //     final response = await http.get(Uri.parse(url));
+  //     if (response.statusCode == 200) {
+  //       final decodeJson = jsonDecode(response.body) as List<dynamic>;
+
+  //       productReviews = decodeJson;
+  //       notifyListeners();
+  //     } else {
+  //       throw Exception("Failed to load reviews");
+  //     }
+  //   } catch (error) {
+  //     debugPrint("Error fetching reviews: $error");
+  //   }
+  // }
+
+   Future<void> getAllReviews() async {
+    try {
+      final response = await http.get(Uri.parse(APIEndpoint.getAllReviews));
+      if (response.statusCode == 200) {
+        productAllReviews = json.decode(response.body);
+        debugPrint("productAllReviews : $productAllReviews");
+        notifyListeners();
+      } else {
+        throw Exception('Failed to load reviews');
+      }
+    } catch (e) {
+      debugPrint('Error fetching reviews: $e');
+    }
+  }
+
+  // ✅ Fetch reviews for a specific product
+  Future<void> getReviews(int productId) async {
     final url = '${APIEndpoint.getReviews}/products/$productId/reviews';
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        final decodeJson = jsonDecode(response.body) as List<dynamic>;
-
-        productReviews = decodeJson;
+        productSpecificReviews = json.decode(response.body);
         notifyListeners();
       } else {
-        throw Exception("Failed to load reviews");
+        throw Exception('Failed to load reviews');
       }
-    } catch (error) {
-      debugPrint("Error fetching reviews: $error");
+    } catch (e) {
+      debugPrint('Error fetching product reviews: $e');
     }
   }
 }

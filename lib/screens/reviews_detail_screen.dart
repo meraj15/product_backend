@@ -33,9 +33,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
           style: TextStyle(color: Colors.white),
         ),
       ),
-      body: provider.productReviews.isEmpty
-          ? const Center(
-              child: Text("No reviews available"))
+      body: provider.productSpecificReviews.isEmpty
+          ? const Center(child: Text("No reviews available"))
           : GridView.builder(
               padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -44,12 +43,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
               ),
-              itemCount: provider.productReviews.length,
+              itemCount: provider.productSpecificReviews.length,
               itemBuilder: (context, index) {
-                final reviews = provider.productReviews[index];
+                final reviews = provider.productSpecificReviews[index];
 
                 return ReviewCard(
-                  rating: reviews["rating"] ?? 0, 
+                  rating: reviews["rating"] ?? 0,
                   userName: reviews["reviewer_name"] ?? 'Unknown',
                   comment: reviews["comment"] ?? 'No comment',
                   reviewerInitial:
