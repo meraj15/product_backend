@@ -68,14 +68,18 @@ class _AddNewProductState extends State<AddNewProduct> {
   @override
   Widget build(BuildContext context) {
     final providerRead = context.read<ProductData>();
+    final theme = Theme.of(context); // Use theme to derive values
     return Scaffold(
-      backgroundColor: const Color(0xfff9f9f9),
+      backgroundColor: theme.scaffoldBackgroundColor, // Theme-based
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: theme.colorScheme.primary,
         elevation: 0.5,
-        title: const Text(
+        title: Text(
           "Add New Product",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            color: theme.colorScheme.onPrimary,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         actions: [
           Padding(
@@ -87,25 +91,41 @@ class _AddNewProductState extends State<AddNewProduct> {
                     await uploadBase64Images(getBase64Images());
                 providerRead.postNewProduct(productImages);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Product added successfully')),
+                  SnackBar(
+                    content: Text(
+                      'Product added successfully',
+                      style: TextStyle(
+                        color: theme.textTheme.bodyMedium?.color ?? (theme.brightness == Brightness.dark ? Colors.white : Colors.black87),
+                      ),
+                    ),
+                    backgroundColor: theme.cardColor, // Theme-based
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
+                backgroundColor: theme.elevatedButtonTheme.style?.backgroundColor?.resolve({}) ?? theme.cardColor,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: theme.brightness == Brightness.dark ? theme.colorScheme.onPrimary : Colors.transparent),
+                ),
               ),
               label: Text(
                 "Add Product",
                 style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w500),
+                  color: theme.elevatedButtonTheme.style?.foregroundColor?.resolve({}) ?? theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-              icon: const Icon(Icons.add),
+              icon: Icon(
+                Icons.add,
+                color: theme.elevatedButtonTheme.style?.foregroundColor?.resolve({}) ?? theme.colorScheme.onPrimary,
+              ),
             ),
           ),
         ],
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(
+          color: theme.colorScheme.onPrimary,
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -114,137 +134,164 @@ class _AddNewProductState extends State<AddNewProduct> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Left Section
-               Expanded(
+              Expanded(
                 flex: 2,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                   const Text('General Information',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w600)),
-                   const SizedBox(height: 24),
-                    buildInputField('Name Product', 'Enter the product name',providerRead.newProductTitleController),
-                   const SizedBox(height: 24),
+                    Text(
+                      'General Information',
+                      style: theme.textTheme.headlineSmall?.copyWith(fontSize: 20) ?? const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 24),
                     buildInputField(
-                        'Description Product', 'Enter the product description',providerRead.newProductDescriptionController,
-                        maxLines: 4),
-                   const SizedBox(height: 24),
+                      'Name Product',
+                      'Enter the product name',
+                      providerRead.newProductTitleController,
+                    ),
+                    const SizedBox(height: 24),
+                    buildInputField(
+                      'Description Product',
+                      'Enter the product description',
+                      providerRead.newProductDescriptionController,
+                      maxLines: 4,
+                    ),
+                    const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
                           child: buildInputField(
                             'Stock',
-                            'Enter stock quantity',providerRead.newProductStockController,
+                            'Enter stock quantity',
+                            providerRead.newProductStockController,
                             keyboardType: TextInputType.number,
                             inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly
+                              FilteringTextInputFormatter.digitsOnly,
                             ],
                           ),
                         ),
-                       const SizedBox(width: 24),
+                        const SizedBox(width: 24),
                         Expanded(
                           child: buildInputField(
                             'Category',
-                            'Enter category name',providerRead.newProductCategoryController,
+                            'Enter category name',
+                            providerRead.newProductCategoryController,
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
-                                  RegExp(r'[a-zA-Z\s]'))
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                   const SizedBox(height: 32),
-                   const Text('Shipping Information',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w600)),
-                   const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: buildInputField(
-                            'Product Shipping Information',
-                            'Enter shipping Information',providerRead.newProductShippingInfoController,
-                          ),
-                        ),
-                       const SizedBox(width: 24),
-                        Expanded(
-                          child: buildInputField(
-                            'Availability Status',
-                            'Enter availability',providerRead.newProductAvailabilityStatusController,
-                          ),
-                        ),
-                      ],
-                    ),
-                   const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                            child: buildInputField(
-                                'Return Policy', 'Enter the return policy',providerRead.newProductReturnPolicyController)),
-                       const SizedBox(width: 24),
-                        Expanded(
-                          child: buildInputField(
-                            'Minimum Order Quantity',
-                            'Enter the minimum order quantity',providerRead.newProductMinimumOrderQuantityController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly
+                                RegExp(r'[a-zA-Z\s]'),
+                              ),
                             ],
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 32),
-                   const Text('Brand Details',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w600)),
-                   const SizedBox(height: 24),
+                    Text(
+                      'Shipping Information',
+                      style: theme.textTheme.headlineSmall?.copyWith(fontSize: 20) ?? const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: buildInputField(
+                            'Product Shipping Information',
+                            'Enter shipping Information',
+                            providerRead.newProductShippingInfoController,
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          child: buildInputField(
+                            'Availability Status',
+                            'Enter availability',
+                            providerRead.newProductAvailabilityStatusController,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: buildInputField(
+                            'Return Policy',
+                            'Enter the return policy',
+                            providerRead.newProductReturnPolicyController,
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          child: buildInputField(
+                            'Minimum Order Quantity',
+                            'Enter the minimum order quantity',
+                            providerRead.newProductMinimumOrderQuantityController,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    Text(
+                      'Brand Details',
+                      style: theme.textTheme.headlineSmall?.copyWith(fontSize: 20) ?? const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
                           child: buildInputField(
                             'Product Brand',
-                            'Enter product brand',providerRead.newProductBrandController,
+                            'Enter product brand',
+                            providerRead.newProductBrandController,
                           ),
                         ),
-                       const SizedBox(width: 24),
+                        const SizedBox(width: 24),
                         Expanded(
                           child: buildInputField(
                             'Product Warranty',
-                            'Enter product warranty',providerRead.newProductWarrantyController,
+                            'Enter product warranty',
+                            providerRead.newProductWarrantyController,
                           ),
                         ),
                       ],
                     ),
-                   const SizedBox(height: 32),
-                   const Text('Pricing',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w600)),
-                   const SizedBox(height: 24),
+                    const SizedBox(height: 32),
+                    Text(
+                      'Pricing',
+                      style: theme.textTheme.headlineSmall?.copyWith(fontSize: 20) ?? const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
                           child: buildInputField(
                             'Price',
-                            'Enter the product price',providerRead.newProductPriceController,
+                            'Enter the product price',
+                            providerRead.newProductPriceController,
                             keyboardType:
-                               const TextInputType.numberWithOptions(decimal: true),
+                                const TextInputType.numberWithOptions(decimal: true),
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
-                                  RegExp(r'^\d*\.?\d*$'))
+                                RegExp(r'^\d*\.?\d*$'),
+                              ),
                             ],
                           ),
                         ),
-                       const SizedBox(width: 24),
+                        const SizedBox(width: 24),
                         Expanded(
                           child: buildInputField(
                             'Discount(%)',
-                            'Enter the product discount',providerRead.newProductDiscountController,
+                            'Enter the product discount',
+                            providerRead.newProductDiscountController,
                             keyboardType: TextInputType.number,
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
-                                  RegExp(r'^\d*\.?\d*$'))
+                                RegExp(r'^\d*\.?\d*$'),
+                              ),
                             ],
                           ),
                         ),
@@ -253,14 +300,13 @@ class _AddNewProductState extends State<AddNewProduct> {
                   ],
                 ),
               ),
-             const SizedBox(width: 48),
-
+              const SizedBox(width: 48),
               // Right Section - Upload Images
               Expanded(
                 flex: 1,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardColor, // Theme-based
                     borderRadius: BorderRadius.circular(25),
                   ),
                   child: Padding(
@@ -268,11 +314,11 @@ class _AddNewProductState extends State<AddNewProduct> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                       const Text('Upload Product Images',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.w600)),
+                        Text(
+                          'Upload Product Images',
+                          style: theme.textTheme.headlineSmall?.copyWith(fontSize: 18) ?? const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87),
+                        ),
                         const SizedBox(height: 16),
-
                         // Image Upload Box (Default & Selected Image)
                         GestureDetector(
                           onTap: pickImage,
@@ -280,22 +326,30 @@ class _AddNewProductState extends State<AddNewProduct> {
                             height: 300,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
+                              border: Border.all(
+                                color: theme.colorScheme.onSurface, // Theme-based
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: selectedImage == null
-                                ? const Center(
-                                    child: Text("No Image Selected",
-                                        style: TextStyle(color: Colors.grey)))
+                                ? Center(
+                                    child: Text(
+                                      "No Image Selected",
+                                      style: TextStyle(
+                                        color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? (theme.brightness == Brightness.dark ? Colors.white70 : Colors.grey),
+                                      ),
+                                    ),
+                                  )
                                 : ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
-                                    child: Image.memory(selectedImage!,
-                                        fit: BoxFit.cover),
+                                    child: Image.memory(
+                                      selectedImage!,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                           ),
                         ),
                         const SizedBox(height: 16),
-
                         // Image Picker List (Horizontal Scroll)
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
@@ -307,35 +361,39 @@ class _AddNewProductState extends State<AddNewProduct> {
                                   width: 80,
                                   height: 80,
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey),
+                                    border: Border.all(
+                                      color: theme.colorScheme.onSurface, // Theme-based
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: const Icon(Icons.add,
-                                      color: Colors.black),
+                                  child: Icon(
+                                    Icons.add,
+                                    color: theme.textTheme.bodyMedium?.color ?? (theme.brightness == Brightness.dark ? Colors.white : Colors.black),
+                                  ),
                                 ),
                               ),
-                              const SizedBox(
-                                width: 10,
-                              ),
-                              ...images.map((image) => GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedImage = image;
-                                      });
-                                    },
-                                    child: Container(
-                                      margin: const EdgeInsets.only(right: 8),
-                                      width: 80,
-                                      height: 80,
-                                      decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          image: DecorationImage(
-                                            image: MemoryImage(image),
-                                            fit: BoxFit.cover,
-                                          )),
+                              const SizedBox(width: 10),
+                              ...images.map(
+                                (image) => GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      selectedImage = image;
+                                    });
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.only(right: 8),
+                                    width: 80,
+                                    height: 80,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      image: DecorationImage(
+                                        image: MemoryImage(image),
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
-                                  ))
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -351,48 +409,57 @@ class _AddNewProductState extends State<AddNewProduct> {
     );
   }
 
- Widget buildInputField(
-  String label,
-  String hintText,
-  TextEditingController controller, {
-  int maxLines = 1,
-  TextInputType keyboardType = TextInputType.text,
-  List<TextInputFormatter>? inputFormatters,
-}) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style:const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-      ),
-     const SizedBox(height: 8),
-      TextFormField(
-        controller: controller,
-        maxLines: maxLines,
-        keyboardType: keyboardType,
-        inputFormatters: inputFormatters,
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: Colors.white,
-          hintText: hintText,
-          contentPadding:const EdgeInsets.all(12),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide:const BorderSide(color: Colors.grey), // Grey border
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide:const BorderSide(color: Colors.grey), // Grey border when enabled
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide:const BorderSide(color: Colors.grey), // Grey border when focused
-          ),
+  Widget buildInputField(
+    String label,
+    String hintText,
+    TextEditingController controller, {
+    int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
+    final theme = Theme.of(context); // Use theme to derive values
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.headlineSmall?.copyWith(fontSize: 14, fontWeight: FontWeight.w500) ?? const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
         ),
-      ),
-    ],
-  );
-}
-
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          cursorColor: theme.textTheme.bodyMedium?.color == Colors.white70 ? Colors.white : null, // Theme-based cursor color
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: theme.cardColor, // Theme-based
+            hintText: hintText,
+            hintStyle: theme.textTheme.bodyMedium?.copyWith(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7)) ?? TextStyle(color: theme.brightness == Brightness.dark ? Colors.white70 : Colors.grey),
+            contentPadding: const EdgeInsets.all(12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: theme.colorScheme.onSurface, // Theme-based
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: theme.colorScheme.onSurface, // Theme-based
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: theme.colorScheme.onSurface, // Theme-based
+              ),
+            ),
+          ),
+          style: theme.textTheme.bodyMedium, // Theme-based text style
+        ),
+      ],
+    );
+  }
 }

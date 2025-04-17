@@ -15,42 +15,54 @@ class _OrderItemsState extends State<OrderItems> {
   @override
   void initState() {
     super.initState();
-      context.read<ProductData>().getOrderItems(widget.orderId);
+    context.read<ProductData>().getOrderItems(widget.orderId);
     context.read<ProductData>().fetchOrderStatus(widget.orderId);
   }
 
   @override
   Widget build(BuildContext context) {
     final providerRead = context.watch<ProductData>();
+    final theme = Theme.of(context); // Use theme to derive values
     debugPrint("providerRead.orderedItems : ${providerRead.orderedItems}");
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        title: const Text(
+        backgroundColor: theme.colorScheme.primary,
+        title: Text(
           "User Order Products",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            color: theme.colorScheme.onPrimary,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(
+          color: theme.colorScheme.onPrimary,
+        ),
       ),
+      backgroundColor: theme.scaffoldBackgroundColor, // Theme-based
       body: providerRead.orderedItems.isEmpty
-          ? const Center(child: Text("No items found for this order."))
+          ? Center(
+              child: Text(
+                "No items found for this order.",
+                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 16) ?? const TextStyle(fontSize: 16, color: Colors.black87),
+              ),
+            )
           : Container(
-              margin:const EdgeInsets.all(20),
+              margin: const EdgeInsets.all(20),
               child: ListView.builder(
                 itemCount: providerRead.orderedItems.length,
                 itemBuilder: (context, index) {
                   final product = providerRead.orderedItems[index];
                   return Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: theme.cardColor, // Theme-based
                       border: Border(
                         bottom: BorderSide(
-                          color: Colors.grey[300]!,
+                          color: theme.brightness == Brightness.dark ? theme.cardColor : Colors.grey[300]!,
                           width: 1,
                         ),
                       ),
                     ),
-                    padding:const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Row(
                       children: [
                         // Product Image
@@ -65,30 +77,39 @@ class _OrderItemsState extends State<OrderItems> {
                             child: Image.network(
                               product.thumbnail,
                               fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(Icons.error, size: 100);
+                              },
                             ),
                           ),
                         ),
-                       const SizedBox(width: 10),
-
+                        const SizedBox(width: 10),
                         // Product Details
                         Expanded(
                           child: Text(
                             product.title,
-                            style:const TextStyle(fontWeight: FontWeight.w500),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: theme.colorScheme.onSurface, // Theme-based
+                            ) ?? const TextStyle(fontWeight: FontWeight.w500, color: Colors.black87),
                           ),
                         ),
                         Expanded(
                           child: Column(
                             children: [
-                             const Text(
+                              Text(
                                 'Price',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.grey),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? (theme.brightness == Brightness.dark ? Colors.white70 : Colors.grey),
+                                ) ?? const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
                               ),
                               Text(
                                 '\$${product.price.toStringAsFixed(2)}',
-                                style:const TextStyle(fontWeight: FontWeight.w500),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.colorScheme.onSurface, // Theme-based
+                                ) ?? const TextStyle(fontWeight: FontWeight.w500, color: Colors.black87),
                               ),
                             ],
                           ),
@@ -96,15 +117,19 @@ class _OrderItemsState extends State<OrderItems> {
                         Expanded(
                           child: Column(
                             children: [
-                             const Text(
+                              Text(
                                 'Quantity',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.grey),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? (theme.brightness == Brightness.dark ? Colors.white70 : Colors.grey),
+                                ) ?? const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
                               ),
                               Text(
                                 '${product.quantity}',
-                                style:const TextStyle(fontWeight: FontWeight.w500),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.colorScheme.onSurface, // Theme-based
+                                ) ?? const TextStyle(fontWeight: FontWeight.w500, color: Colors.black87),
                               ),
                             ],
                           ),
@@ -112,15 +137,19 @@ class _OrderItemsState extends State<OrderItems> {
                         Expanded(
                           child: Column(
                             children: [
-                             const Text(
+                              Text(
                                 'Total Price',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.grey),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? (theme.brightness == Brightness.dark ? Colors.white70 : Colors.grey),
+                                ) ?? const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
                               ),
                               Text(
                                 '\$${(product.price * product.quantity).toStringAsFixed(2)}',
-                                style:const TextStyle(fontWeight: FontWeight.w500),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.colorScheme.onSurface, // Theme-based
+                                ) ?? const TextStyle(fontWeight: FontWeight.w500, color: Colors.black87),
                               ),
                             ],
                           ),
@@ -133,22 +162,24 @@ class _OrderItemsState extends State<OrderItems> {
             ),
       bottomSheet: GestureDetector(
         onTap: () {
-          providerRead.logicBottemSheet(widget.orderId);
+          providerRead.logicBottomSheet(widget.orderId);
         },
         child: Container(
           width: double.infinity,
           height: 50,
-          decoration:
-              BoxDecoration(color: Theme.of(context).colorScheme.primary),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary,
+          ),
           child: Center(
-              child: Text(
-            providerRead.bottomSheetText,
-            style:const TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
+            child: Text(
+              providerRead.bottomSheetText,
+              style: TextStyle(
+                fontSize: 16,
+                color: theme.colorScheme.onPrimary,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          )),
+          ),
         ),
       ),
     );

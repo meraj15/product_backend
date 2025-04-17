@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:product_admin/screens/analytics.dart';
 import 'package:product_admin/screens/product_screen.dart';
 import 'package:product_admin/screens/reviews_screen.dart';
 import 'package:product_admin/screens/user_order_screen.dart';
+import 'package:product_admin/provider/product_provider.dart';
+import 'package:provider/provider.dart';
 
 class SideBar extends StatefulWidget {
   const SideBar({super.key});
@@ -12,85 +15,114 @@ class SideBar extends StatefulWidget {
 
 class _SideBarState extends State<SideBar> {
   int selectedSideBar = 1;
+  bool isDarkMode = false;
+
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<ProductData>(context, listen: false);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: isDark ? Colors.grey[900]! : Colors.grey[100],
       body: Row(
         children: [
           Container(
             width: 270,
-            color: Colors.white,
+            color: isDark ? const Color(0xff303030) : Colors.white,
             child: Column(
               children: [
                 const SizedBox(height: 16),
-                // Logo
-                const Row(
+                Row(
                   children: [
-                    SizedBox(width: 22),
+                    const SizedBox(width: 22),
                     Text(
                       'AM Admin',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
-                const Divider(thickness: 2,color: Colors.grey,),
+                const Divider(thickness: 2, color: Colors.grey),
                 _buildMenuItem(
-                    isSelected: selectedSideBar == 1,
-                    title: 'Products',
-                    icon: Icons.inventory_2_outlined,
-                    onTap: () {
+                  isSelected: selectedSideBar == 1,
+                  title: 'Products',
+                  icon: Icons.inventory_2_outlined,
+                  onTap: () {
+                    setState(() {
                       selectedSideBar = 1;
-                      setState(() {});
-                    }),
+                    });
+                  },
+                ),
                 _buildMenuItem(
-                    isSelected: selectedSideBar == 2,
-                    title: 'Orders',
-                    icon: Icons.shopping_cart_outlined,
-                    onTap: () {
+                  isSelected: selectedSideBar == 2,
+                  title: 'Orders',
+                  icon: Icons.shopping_cart_outlined,
+                  onTap: () {
+                    setState(() {
                       selectedSideBar = 2;
-                      setState(() {});
-                    }),
+                    });
+                  },
+                ),
                 _buildMenuItem(
-                    isSelected: selectedSideBar == 3,
-                    title: 'Reviews',
-                    icon: Icons.reviews_outlined,
-                    onTap: () {
+                  isSelected: selectedSideBar == 3,
+                  title: 'Reviews',
+                  icon: Icons.reviews_outlined,
+                  onTap: () {
+                    setState(() {
                       selectedSideBar = 3;
-                      setState(() {});
-                    }),
-                   const Divider(thickness: 2,color: Colors.grey,),
+                    });
+                  },
+                ),
                 _buildMenuItem(
                   isSelected: selectedSideBar == 4,
-                  title: 'Dark Mode',
-                  icon: Icons.dark_mode_outlined,
+                  title: 'Analytics',
+                  icon: Icons.analytics_outlined,
                   onTap: () {
-                    selectedSideBar = 4;
-                    setState(() {});
+                    setState(() {
+                      selectedSideBar = 4;
+                    });
                   },
+                ),
+                const Divider(thickness: 2, color: Colors.grey),
+                _buildMenuItem(
+                  isSelected: selectedSideBar == 5,
+                  title: 'Dark Mode',
+                  icon: isDark ? Icons.dark_mode : Icons.light_mode,
+                  onTap: () {},
                   switchNightOrLightMode: Switch(
-                    value: false,
-                    onChanged: (value) {},
+                    value: isDarkMode,
+                    onChanged: (value) {
+                      setState(() {
+                        isDarkMode = value;
+                      });
+                      provider.isDarkMode = value;
+                      provider.notifyListeners();
+                    },
+                    activeColor: isDark ? Colors.white : const Color(0xffdb3022),
                   ),
                 ),
               ],
             ),
           ),
           if (selectedSideBar == 1)
-           const Expanded(
+            const Expanded(
               child: ProductScreen(),
             ),
           if (selectedSideBar == 2)
-           const Expanded(
+            const Expanded(
               child: OrdersScreen(),
             ),
           if (selectedSideBar == 3)
-           const Expanded(
+            const Expanded(
               child: ReviewsScreen(),
+            ),
+          if (selectedSideBar == 4)
+            const Expanded(
+              child: AnalyticsOrdersScreen(),
             ),
         ],
       ),
@@ -104,28 +136,35 @@ class _SideBarState extends State<SideBar> {
     required bool isSelected,
     Switch? switchNightOrLightMode,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
+      onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xffdb3022).withOpacity(0.1)
+              ? (isDark ? Colors.grey[700]!.withOpacity(0.5) : const Color(0xffdb3022).withOpacity(0.1))
               : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: ListTile(
-          onTap: onTap,
           leading: Icon(
             icon,
-            color: isSelected ? const Color(0xffdb3022) : Colors.grey[600],
+            color: isSelected
+                ? (isDark ? Colors.white : const Color(0xffdb3022))
+                : (isDark ? Colors.white70 : Colors.grey[600]),
+            size: 24, // Consistent icon size
           ),
           title: Text(
             title,
             style: TextStyle(
-              color: isSelected ? const Color(0xffdb3022) : Colors.grey[600],
+              color: isSelected
+                  ? (isDark ? Colors.white : const Color(0xffdb3022))
+                  : (isDark ? Colors.white70 : Colors.grey[600]),
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
-          selected: isSelected,
           trailing: switchNightOrLightMode,
         ),
       ),

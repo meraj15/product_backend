@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:product_admin/provider/product_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -20,21 +21,28 @@ class _ReviewScreenState extends State<ReviewScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ProductData>();
+    final theme = Theme.of(context); // Use theme to derive values
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.red,
+        backgroundColor: theme.colorScheme.primary,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'User Reviews',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: theme.colorScheme.onPrimary),
         ),
       ),
+      backgroundColor: theme.scaffoldBackgroundColor, // Theme-based
       body: provider.productSpecificReviews.isEmpty
-          ? const Center(child: Text("No reviews available"))
+          ? Center(
+              child: Text(
+                "No reviews available",
+                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 16) ?? const TextStyle(fontSize: 16, color: Colors.black87),
+              ),
+            )
           : GridView.builder(
               padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -85,8 +93,10 @@ class ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context); // Use theme to derive values
     return Card(
       elevation: 2,
+      color: theme.cardColor, // Theme-based
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -95,26 +105,37 @@ class ReviewCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            StarRating(rating: rating),
+            RatingBarIndicator(
+              rating: rating.toDouble(),
+              itemBuilder: (context, _) =>const Icon(
+                Icons.star,
+                color: Colors.amber, // Theme-based
+              ),
+              itemCount: 5,
+              itemSize: 20,
+            ),
             const SizedBox(height: 6),
             Text(
               userName,
-              style: const TextStyle(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-              ),
+                color: theme.colorScheme.onSurface, // Theme-based
+              ) ?? const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
             ),
             const SizedBox(height: 4),
             Text(
               comment,
-              style: const TextStyle(fontSize: 16),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? (theme.brightness == Brightness.dark ? Colors.white70 : Colors.grey[600]),
+              ) ??  TextStyle(color: Colors.grey[600]),
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 10),
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: Colors.red,
+                  backgroundColor:const Color(0xffdb3022), // Theme-based
                   radius: 16,
                   child: Text(
                     reviewerInitial,
@@ -130,14 +151,17 @@ class ReviewCard extends StatelessWidget {
                   children: [
                     Text(
                       reviewerName,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface, // Theme-based
+                      ) ?? const TextStyle(fontWeight: FontWeight.w500, color: Colors.black87),
                     ),
                     Text(
                       DateTime.parse(timestamp).toString().substring(0, 16),
-                      style: TextStyle(
-                        color: Colors.grey[600],
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? (theme.brightness == Brightness.dark ? Colors.white70 : Colors.grey[600]),
                         fontSize: 12,
-                      ),
+                      ) ??  TextStyle(color: Colors.grey[600], fontSize: 12),
                     ),
                   ],
                 ),
@@ -146,25 +170,6 @@ class ReviewCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class StarRating extends StatelessWidget {
-  final int rating;
-
-  const StarRating({super.key, required this.rating});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: List.generate(5, (index) {
-        return Icon(
-          index < rating ? Icons.star : Icons.star_border,
-          color: Colors.amber,
-          size: 20,
-        );
-      }),
     );
   }
 }

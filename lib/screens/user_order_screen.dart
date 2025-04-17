@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -10,7 +9,6 @@ class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _OrdersScreenState createState() => _OrdersScreenState();
 }
 
@@ -18,61 +16,91 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<ProductData>().getOrdersData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProductData>().getOrdersData();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final providerRead = Provider.of<ProductData>(context, listen: true);
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
-        backgroundColor: Colors.grey.shade50,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Column(
           children: [
-            // TabBar ko top par dikhane ke liye PreferredSize ka use kiya hai
             PreferredSize(
               preferredSize: const Size.fromHeight(30.0),
               child: Padding(
-                padding:const EdgeInsets.symmetric(vertical: 15),
+                padding: const EdgeInsets.symmetric(vertical: 15),
                 child: TabBar(
                   indicatorColor: Theme.of(context).colorScheme.primary,
                   labelColor: Theme.of(context).colorScheme.primary,
                   isScrollable: true,
-                  unselectedLabelColor: Colors.grey,
+                  unselectedLabelColor:
+                      Theme.of(context).textTheme.bodyMedium!.color!.withOpacity(0.7),
                   indicatorWeight: 3,
-                  dividerColor: Colors.grey,
+                  dividerColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                   dividerHeight: 2,
                   onTap: (index) {
                     final selectedStatus = getStatusFromTabIndex(index);
                     context.read<ProductData>().filterOrders(selectedStatus);
                   },
-                  tabs: const [
+                  tabs: [
                     Tab(
-                        child: Text("All Orders",
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w500))),
+                      child: Text(
+                        "All Orders",
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ),
                     Tab(
-                        child: Text("Confirm",
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w500))),
+                      child: Text(
+                        "Confirm",
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ),
                     Tab(
-                        child: Text("Out for Delivery",
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w500))),
+                      child: Text(
+                        "Out for Delivery",
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ),
                     Tab(
-                        child: Text("Delivered",
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w500))),
+                      child: Text(
+                        "Delivered",
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ),
+                    Tab(
+                      child: Text(
+                        "Cancelled",
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
             Expanded(
               child: TabBarView(
-                children: List.generate(4, (index) {
-                  return buildOrdersList(providerRead);
-                }),
+                children: [
+                  buildOrdersList(providerRead, "All"),
+                  buildOrdersList(providerRead, "Confirm"),
+                  buildOrdersList(providerRead, "Out for Delivery"),
+                  buildOrdersList(providerRead, "Delivered"),
+                  buildOrdersList(providerRead, "Cancelled"),
+                ],
               ),
             ),
           ],
@@ -81,7 +109,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
-  Widget buildOrdersList(ProductData providerRead) {
+  Widget buildOrdersList(ProductData providerRead, String status) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -91,8 +119,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                '${providerRead.filteredOrders.length} orders found',
-                style: const TextStyle(fontSize: 16, color: Colors.black87),
+                !providerRead.isOrdersLoaded
+                    ? 'Loading...'
+                    : '${providerRead.filteredOrders.length} orders found',
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
             Row(
@@ -100,7 +130,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: IconButton(
-                    icon: const Icon(Icons.calendar_today),
+                    icon: Icon(
+                      Icons.calendar_today,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                     onPressed: () {
                       context.read<ProductData>().selectDate(context);
                     },
@@ -108,7 +141,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.only(right: 8.0),
-                  child: Text(providerRead.selectedDateString),
+                  child: Text(
+                    providerRead.selectedDateString,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 ),
               ],
             ),
@@ -118,154 +154,249 @@ class _OrdersScreenState extends State<OrdersScreen> {
           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xfff9f9f9),
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Expanded(flex: 1, child: Center(child: Text("Order ID"))),
-              Expanded(flex: 2, child: Center(child: Text("Name"))),
-              Expanded(flex: 3, child: Center(child: Text("Address"))),
-              Expanded(flex: 2, child: Center(child: Text("Mobile"))),
-              Expanded(flex: 2, child: Center(child: Text("Price"))),
-              Expanded(flex: 1, child: Center(child: Text("Time"))),
-              Expanded(flex: 2, child: Center(child: Text("Status"))),
+              Expanded(
+                flex: 1,
+                child: Center(
+                  child: Text(
+                    "Order ID",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Center(
+                  child: Text(
+                    "Name",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 5,
+                child: Center(
+                  child: Text(
+                    "Address",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Center(
+                  child: Text(
+                    "Mobile",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Center(
+                  child: Text(
+                    "Price",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: Center(
+                  child: Text(
+                    "Time",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Center(
+                  child: Text(
+                    "Status",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    "Actions",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
         Expanded(
-          child: providerRead.filteredOrders.isEmpty
+          child: !providerRead.isOrdersLoaded
               ? Center(
-                  child: Text(
-                  '${providerRead.selectedDateString} No orders available.',
-                ))
-              : ListView.builder(
-                  itemCount: providerRead.filteredOrders.length,
-                  itemBuilder: (context, index) {
-                    final order = providerRead.filteredOrders[index];
-                    final price = NumberFormat.currency(symbol: "\u20B9")
-                        .format(
-                            double.tryParse(order['price']?.toString() ?? '0'));
-                    return InkWell(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => OrderItems(
-                              orderId: order['order_id'],
+                  child: CircularProgressIndicator(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                )
+              : providerRead.filteredOrders.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No Orders Found for $status on ${providerRead.selectedDateString}',
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: providerRead.filteredOrders.length,
+                      itemBuilder: (context, index) {
+                        if (index >= providerRead.filteredOrders.length) {
+                          return const SizedBox.shrink();
+                        }
+                        final order = providerRead.filteredOrders[index];
+                        final price = NumberFormat.currency(symbol: "\$").format(
+                            double.tryParse(order['price']?.toString() ?? '0') ?? 0);
+                        return InkWell(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => OrderItems(
+                                  orderId: order['order_id']?.toString() ?? '-',
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 1,
+                                  child: Center(
+                                    child: Text(
+                                      order['order_id']?.toString() ?? '-',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Center(
+                                    child: Text(
+                                      order['name']?.toString() ?? '-',
+                                      style: Theme.of(context).textTheme.bodyMedium,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 5,
+                                  child: Center(
+                                    child: Text(
+                                      order['address']?.toString() ?? '-',
+                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Center(
+                                    child: Text(
+                                      order['mobile']?.toString() ?? '-',
+                                      style: Theme.of(context).textTheme.bodyMedium,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Center(
+                                    child: Text(
+                                      price,
+                                      style: Theme.of(context).textTheme.bodyMedium,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Center(
+                                    child: Text(
+                                      order['order_time']?.toString() ?? '-',
+                                      style: Theme.of(context).textTheme.bodyMedium,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Center(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: _getStatusColor(order['order_status']?.toString(), context),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        order['order_status']?.toString() ?? '-',
+                                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                if (order['order_status'] != "Delivered" &&
+                                    order['order_status'] != "Cancelled")
+                                  Expanded(
+                                    child: PopupMenuButton<String>(
+                                      onSelected: (value) {
+                                        if (value == 'Cancel Order') {
+                                          providerRead.updateOrderStatus(
+                                              order['order_id']?.toString() ?? '-', 'Cancelled');
+                                        }
+                                      },
+                                      iconColor: Theme.of(context).colorScheme.onSurface,
+                                      itemBuilder: (context) => [
+                                        PopupMenuItem<String>(
+                                          value: 'Cancel Order',
+                                          child: Text(
+                                            'Cancel Order',
+                                            style: Theme.of(context).textTheme.bodyMedium,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                else
+                                  const Expanded(child: SizedBox.shrink()),
+                              ],
                             ),
                           ),
                         );
                       },
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 1,
-                              child: Center(
-                                child: Text(
-                                  order['order_id'] ?? '-',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Center(
-                                child: Text(
-                                  order['name'] ?? '-',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Center(
-                                child: Text(
-                                  order['address'] ?? '-',
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      overflow: TextOverflow.ellipsis),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Center(
-                                child: Text(
-                                  order['mobile'] ?? '-',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Center(
-                                child: Text(
-                                  price,
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ),
-                            ),
-                             Expanded(
-                              flex: 1,
-                              child: Center(
-                                child: Text(
-                                  '${order['order_time'] ?? '-'}',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Center(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        _getStatusColor(order['order_status']),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(
-                                    order['order_status'] ?? '-',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                    ),
         ),
       ],
     );
@@ -279,21 +410,27 @@ class _OrdersScreenState extends State<OrdersScreen> {
         return "Out for Delivery";
       case 3:
         return "Delivered";
+      case 4:
+        return "Cancelled";
       default:
         return "All";
     }
   }
 
-  Color _getStatusColor(String? status) {
-    switch (status) {
-      case "Confirm":
-        return Colors.orange.withOpacity(0.8);
-      case "Out for Delivery":
-        return Colors.blue.withOpacity(0.8);
-      case "Delivered":
+  Color _getStatusColor(String? status, BuildContext context) {
+    final theme = Theme.of(context);
+    switch (status?.toLowerCase()) {
+      case "confirm":
+        return theme.colorScheme.primary.withOpacity(0.8);
+      case "out for delivery":
+        return Colors.red.withOpacity(0.5);
+      case "delivered":
         return Colors.green.withOpacity(0.8);
+      case "cancelled":
+      case "canceled":
+        return Colors.red.withOpacity(0.8);
       default:
-        return Colors.grey;
+        return theme.cardColor;
     }
   }
 }

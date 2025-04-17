@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:product_admin/provider/product_provider.dart';
 import 'package:product_admin/screens/reviews_detail_screen.dart';
 import 'package:provider/provider.dart';
@@ -30,9 +31,14 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ProductData>();
+    final theme = Theme.of(context); // Use theme to derive values
 
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator()); 
+      return Center(
+        child: CircularProgressIndicator(
+          color: theme.colorScheme.primary,
+        ),
+      );
     }
 
     final products = provider.products;
@@ -43,8 +49,14 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     }).toList();
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor, // Theme-based
       body: reviewedProducts.isEmpty
-          ? const Center(child: Text("No products with reviews available"))
+          ? Center(
+              child: Text(
+                "No products with reviews available",
+                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 16) ?? const TextStyle(fontSize: 16, color: Colors.black87),
+              ),
+            )
           : ListView.builder(
               itemCount: reviewedProducts.length,
               itemBuilder: (context, index) {
@@ -59,7 +71,10 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                       ),
                     );
                   },
-                  child: ProductCard(product: product),
+                  child: ProductCard(
+                    product: product,
+                    rating: reviews[index]['rating'],
+                  ),
                 );
               },
             ),
@@ -69,20 +84,22 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
 
 class ProductCard extends StatelessWidget {
   final dynamic product;
+  final double rating;
 
-  const ProductCard({super.key, required this.product});
+  const ProductCard({super.key, required this.product, required this.rating});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context); // Use theme to derive values
     return Container(
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor, // Theme-based
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: theme.brightness == Brightness.dark ? Colors.black26 : Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 2),
@@ -100,6 +117,9 @@ class ProductCard extends StatelessWidget {
               width: 80,
               height: 80,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.error, size: 80);
+              },
             ),
           ),
           const SizedBox(width: 12),
@@ -110,19 +130,19 @@ class ProductCard extends StatelessWidget {
               children: [
                 Text(
                   product.title,
-                  style: TextStyle(
+                  style: theme.textTheme.headlineSmall?.copyWith(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                    color: theme.colorScheme.onPrimary, // Theme-based
+                  ) ?? const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xffdb3022)),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   product.description,
-                  style: const TextStyle(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     fontSize: 14,
-                    color: Colors.grey,
-                  ),
+                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? (theme.brightness == Brightness.dark ? Colors.white70 : Colors.grey),
+                  ) ?? const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(height: 8),
                 // Reviews Link
@@ -141,17 +161,27 @@ class ProductCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(4),
+                      color: theme.brightness == Brightness.dark ? theme.colorScheme.primary : Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       'See All Reviews',
-                      style: TextStyle(
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         fontSize: 12,
-                        color: Colors.red.shade700,
-                      ),
+                        color: theme.brightness == Brightness.dark ? theme.colorScheme.onSurface : Colors.red.shade700,
+                      ) ??  TextStyle(fontSize: 12, color: Colors.red.shade700),
                     ),
                   ),
+                ),
+                const SizedBox(height: 8),
+                RatingBarIndicator(
+                  rating: rating.toDouble(),
+                  itemBuilder: (context, _) => Icon(
+                    Icons.star,
+                    color: Colors.amber,
+                  ),
+                  itemCount: 5,
+                  itemSize: 20,
                 ),
               ],
             ),

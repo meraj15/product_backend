@@ -19,7 +19,7 @@ class ProductData extends ChangeNotifier {
   String currentOrderStatus = "";
   List<dynamic> productAllReviews = [];
   List<dynamic> productSpecificReviews = [];
-
+  bool isProductsLoaded = true;
   final productTitle = TextEditingController();
   final productDescription = TextEditingController();
   final productPrice = TextEditingController();
@@ -39,18 +39,31 @@ class ProductData extends ChangeNotifier {
   final newProductReturnPolicyController = TextEditingController();
   final newProductCategoryController = TextEditingController();
   final newProductMinimumOrderQuantityController = TextEditingController();
+  bool isOrdersLoaded = false; 
+bool isDarkMode = false; 
 
-  
+Map<int, double> hoveredScales = {};
 
-  Future<void> getData() async {
-    final response = await http.get(Uri.parse(APIEndpoint.productGetEndPoint));
-    final decodeJson = jsonDecode(response.body) as List<dynamic>;
-
-    products = decodeJson.map((json) => Product.fromJson(json)).toList();
-    // debugPrint("products : $products");
-
+  void toggleDarkMode(bool value) {
+    isDarkMode = value;
     notifyListeners();
   }
+ Future<void> getData() async {
+  isProductsLoaded = true; 
+
+  
+  try {
+    final response = await http.get(Uri.parse(APIEndpoint.productGetEndPoint));
+    final decodeJson = jsonDecode(response.body) as List<dynamic>;
+    products = decodeJson.map((json) => Product.fromJson(json)).toList();
+  } catch (e) {
+    debugPrint("Error: $e");
+  }
+  
+  isProductsLoaded = false; // Stop loading
+  notifyListeners();
+}
+
 
   void postNewProduct(List<String> newProductImageUrls) async {
     var url = Uri.parse(APIEndpoint.postNewProduct);
@@ -127,38 +140,65 @@ class ProductData extends ChangeNotifier {
     }
   }
 
-  void getOrdersData() async {
+void getOrdersData() async {
     try {
+      isOrdersLoaded = false;
+      filteredOrders = [];
+      notifyListeners();
+
       final response = await http.get(Uri.parse(APIEndpoint.getOrdersData));
       if (response.statusCode == 200) {
         final decodeJson = jsonDecode(response.body) as List<dynamic>;
-
-        orders = decodeJson;
+        orders = decodeJson.cast<Map<String, dynamic>>();
         filterOrders("All");
-        notifyListeners();
       } else {
-        debugPrint(
-            "Failed to fetch orders. Status code: ${response.statusCode}");
+        debugPrint("Failed to fetch orders. Status code: ${response.statusCode}");
+        orders = [];
+        filteredOrders = [];
+        isOrdersLoaded = true;
+        notifyListeners();
       }
     } catch (e) {
       debugPrint("Error fetching orders: $e");
+      orders = [];
+      filteredOrders = [];
+      isOrdersLoaded = true;
+      notifyListeners();
     }
   }
 
-  void filterOrders(String selectedStatus) {
+ void filterOrders(String selectedStatus) {
+    filteredOrders = [];
+    notifyListeners();
+
     selectedDateString = DateFormat('yyyy-MM-dd').format(selectedDate);
+    debugPrint("Filtering for status: $selectedStatus, date: $selectedDateString");
+
     filteredOrders = orders.where((order) {
-      final orderDate = order['order_date'] ?? '';
-      final isDateMatch = orderDate.startsWith(selectedDateString);
-      final isStatusMatch =
-          selectedStatus == "All" || order['order_status'] == selectedStatus;
+      final orderDate = order['order_date']?.toString() ?? '';
+      bool isDateMatch = true;
+      try {
+        final parsedOrderDate = DateTime.parse(orderDate);
+        isDateMatch = DateFormat('yyyy-MM-dd').format(parsedOrderDate) == selectedDateString;
+      } catch (e) {
+        isDateMatch = orderDate.startsWith(selectedDateString);
+      }
+
+      final orderStatus = order['order_status']?.toString().toLowerCase() ?? '';
+      final isStatusMatch = selectedStatus == "All" ||
+          orderStatus == selectedStatus.toLowerCase() ||
+          (selectedStatus.toLowerCase() == "cancelled" && orderStatus == "canceled");
+
       return isDateMatch && isStatusMatch;
     }).toList();
-    debugPrint("filteredOrders : $filteredOrders");
+
+    debugPrint("filteredOrders length: ${filteredOrders.length}");
+    debugPrint("filteredOrders: $filteredOrders");
+    isOrdersLoaded = true;
     notifyListeners();
   }
 
-  Future<void> selectDate(BuildContext context) async {
+ Future<void> selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,
@@ -167,7 +207,6 @@ class ProductData extends ChangeNotifier {
     );
     if (picked != null && picked != selectedDate) {
       selectedDate = picked;
-      notifyListeners();
       filterOrders("All");
     }
   }
@@ -177,59 +216,80 @@ class ProductData extends ChangeNotifier {
     try {
       final response = await http.get(Uri.parse(url));
       final decodedJson = jsonDecode(response.body);
-      debugPrint("decodedJson : $decodedJson");
+      debugPrint("decodedJson: $decodedJson");
       currentOrderStatus = decodedJson['order_status'] ?? "";
-      bottomSheetText =
-          currentOrderStatus == "Delivered" ? "Delivered" : "Out for Delivery";
+      bottomSheetText = currentOrderStatus == "Delivered" ? "Delivered" : "Out for Delivery";
       notifyListeners();
     } catch (e) {
       debugPrint("Error fetching order status: $e");
     }
   }
 
-  void logicBottemSheet(String orderId) {
+//    void logicBottomSheet(String orderId) {
+//   if (currentOrderStatus == "Confirm") {
+//     bottomSheetText = "Out for Delivery";
+//     updateOrderStatus(orderId, "Out for Delivery");
+//     notifyListeners();
+//   }
+//   if (currentOrderStatus == "Out for Delivery") {
+//     bottomSheetText = "Delivered";
+//     currentOrderStatus = "Delivered";
+//     updateOrderStatus(orderId, "Delivered");
+//     notifyListeners();
+//   } else if (currentOrderStatus == "Delivered") {
+//     bottomSheetText = "Out for Delivery";
+//     currentOrderStatus = "Out for Delivery";
+//     updateOrderStatus(orderId, "Out for Delivery");
+//     notifyListeners();
+//   } else {
+//     debugPrint("Unexpected order status: $currentOrderStatus");
+//   }
+// }
+
+void logicBottomSheet(String orderId) {
     if (currentOrderStatus == "Confirm") {
       bottomSheetText = "Delivered";
       updateOrderStatus(orderId, "Out for Delivery");
-      notifyListeners();
-    }
-    if (currentOrderStatus == "Out for Delivery") {
-      bottomSheetText = "Delivered";
-      currentOrderStatus = "Delivered";
+    } else if (currentOrderStatus == "Out for Delivery") {
+      bottomSheetText = "Order Already Delivered";
       updateOrderStatus(orderId, "Delivered");
-      notifyListeners();
     } else if (currentOrderStatus == "Delivered") {
-      bottomSheetText = "Out for Delivery";
-      currentOrderStatus = "Out for Delivery";
-      updateOrderStatus(orderId, "Out for Delivery");
-      notifyListeners();
+      bottomSheetText = "Order Already Delivered";
+      debugPrint("Cannot change status: Order is already Delivered");
     } else {
       debugPrint("Unexpected order status: $currentOrderStatus");
     }
+    notifyListeners();
   }
 
   void updateOrderStatus(String orderId, String newStatus) async {
     final url = "${APIEndpoint.updateOrderStatus}/$orderId";
     final headers = {"Content-Type": "application/json"};
     final body = jsonEncode({"order_status": newStatus});
+
     try {
       final response = await http.put(
         Uri.parse(url),
         headers: headers,
         body: body,
       );
+
       if (response.statusCode == 200) {
         debugPrint("Order status successfully updated to $newStatus");
         currentOrderStatus = newStatus;
+        if (newStatus == "Cancelled") {
+          bottomSheetText = "Order Cancelled";
+        }
+         getOrdersData(); // Refresh orders list
         notifyListeners();
       } else {
-        debugPrint(
-            "Failed to update order status. Status code: ${response.statusCode}");
+        debugPrint("Failed to update order status. Status code: ${response.statusCode}");
       }
     } catch (e) {
       debugPrint("Error updating order status: $e");
     }
   }
+
 
   void getOrderItems(String orderId) async {
     final url = "${APIEndpoint.getOrderItems}/$orderId";
@@ -240,29 +300,13 @@ class ProductData extends ChangeNotifier {
     notifyListeners();
   }
 
-  // void getReviews(int productId) async {
-  //   final url = '${APIEndpoint.getReviews}/products/$productId/reviews';
-  //   try {
-  //     final response = await http.get(Uri.parse(url));
-  //     if (response.statusCode == 200) {
-  //       final decodeJson = jsonDecode(response.body) as List<dynamic>;
 
-  //       productReviews = decodeJson;
-  //       notifyListeners();
-  //     } else {
-  //       throw Exception("Failed to load reviews");
-  //     }
-  //   } catch (error) {
-  //     debugPrint("Error fetching reviews: $error");
-  //   }
-  // }
 
    Future<void> getAllReviews() async {
     try {
       final response = await http.get(Uri.parse(APIEndpoint.getAllReviews));
       if (response.statusCode == 200) {
         productAllReviews = json.decode(response.body);
-        debugPrint("productAllReviews : $productAllReviews");
         notifyListeners();
       } else {
         throw Exception('Failed to load reviews');
@@ -274,7 +318,7 @@ class ProductData extends ChangeNotifier {
 
   // ✅ Fetch reviews for a specific product
   Future<void> getReviews(int productId) async {
-    final url = '${APIEndpoint.getReviews}/products/$productId/reviews';
+    final url = '${APIEndpoint.getReviews}/$productId/reviews';
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
